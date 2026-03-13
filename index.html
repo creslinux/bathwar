@@ -501,6 +501,95 @@
     transform: translateY(-2px);
   }
 
+  /* ============ SPLASH SCREEN ============ */
+  .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(255,123,57,0.1), transparent 40%),
+      radial-gradient(circle at 50% 60%, rgba(17,221,178,0.08), transparent 40%),
+      #050507;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.5s ease;
+  }
+
+  .splash.hidden { display: none; }
+
+  .splash-title {
+    font-family: 'Bangers', cursive;
+    font-size: clamp(2.2rem, 8vw, 5rem);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    line-height: 1;
+    background: linear-gradient(135deg, #ffd447, #ff7b39, #ff5e2f, #ffd447);
+    background-size: 280% 280%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(255,123,57,0.25));
+    margin-bottom: 1.2rem;
+  }
+
+  .splash-vs {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.8rem, 3vw, 2rem);
+    margin-bottom: 1.6rem;
+  }
+
+  .splash-fighter {
+    text-align: center;
+  }
+
+  .splash-portrait {
+    width: clamp(80px, 20vw, 130px);
+    height: clamp(80px, 20vw, 130px);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border: 3px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.02);
+    margin-bottom: 0.5rem;
+  }
+
+  .splash-fname {
+    font-size: clamp(0.5rem, 1.8vw, 0.8rem);
+    letter-spacing: 0.1em;
+  }
+
+  .splash-fighter.misha .splash-fname { color: var(--misha-2); }
+  .splash-fighter.maggie .splash-fname { color: var(--maggie-2); }
+
+  .splash-vs-text {
+    font-size: clamp(1rem, 3.5vw, 2rem);
+    color: #3a3d4d;
+    text-shadow: 2px 2px 0 #000;
+  }
+
+  .splash-tap {
+    font-size: clamp(0.38rem, 1.2vw, 0.58rem);
+    color: #7a7e94;
+    letter-spacing: 0.2em;
+    animation: tap-pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes tap-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .splash-day {
+    margin-top: 1rem;
+    font-size: clamp(0.26rem, 0.8vw, 0.38rem);
+    color: #4a4e60;
+    letter-spacing: 0.12em;
+  }
+
   .sound-btn {
     position: fixed;
     right: 1rem;
@@ -552,7 +641,24 @@
 </head>
 <body>
 
-<div class="battle-overlay" id="battleOverlay">
+<div class="splash" id="splash">
+  <div class="splash-title">The Big Bathroom</div>
+  <div class="splash-vs">
+    <div class="splash-fighter misha">
+      <canvas class="splash-portrait" id="splashCow" width="48" height="40"></canvas>
+      <div class="splash-fname">MISHA</div>
+    </div>
+    <div class="splash-vs-text">VS</div>
+    <div class="splash-fighter maggie">
+      <canvas class="splash-portrait" id="splashSkater" width="48" height="40"></canvas>
+      <div class="splash-fname">MAGGIE</div>
+    </div>
+  </div>
+  <div class="splash-tap">TAP TO START</div>
+  <div class="splash-day" id="splashDay"></div>
+</div>
+
+<div class="battle-overlay hidden" id="battleOverlay">
   <canvas id="battleCanvas"></canvas>
   <div class="battle-hud">
     <div class="hud-top" id="hbRow">
@@ -1907,12 +2013,59 @@
   updateScoreboard();
   requestAnimationFrame(drawGame);
 
-  document.fonts.ready.then(() => {
-    setTimeout(() => runBattle(), 180);
+  // Splash screen portraits
+  function drawSplashPortraits() {
+    const sc = document.getElementById('splashCow');
+    if (sc) { const x = sc.getContext('2d'); x.clearRect(0,0,48,40); drawCow(x, 24, 26, {pose:'idle'}); }
+    const ss = document.getElementById('splashSkater');
+    if (ss) { const x = ss.getContext('2d'); x.clearRect(0,0,48,40); drawSkater(x, 24, 27, {pose:'idle'}); }
+  }
+
+  function showSplash() {
+    const state = getBattleDayState();
+    const splashDay = document.getElementById('splashDay');
+    if (splashDay) splashDay.textContent = 'DAY ' + state.dayNumber + ' \u2022 ' + (state.isMisha ? 'MISHA\'S TURN' : 'MAGGIE\'S TURN');
+    document.getElementById('splash').classList.remove('hidden');
+    drawSplashPortraits();
+  }
+
+  async function startFromSplash() {
+    const splash = document.getElementById('splash');
+    // iOS Safari requires AudioContext created + resumed in a direct gesture
+    const ac = ensureAudio();
+    if (ac && ac.state === 'suspended') await ac.resume();
+    // Play a silent buffer to fully unlock audio on iOS
+    if (ac) {
+      try {
+        const buf = ac.createBuffer(1, 1, ac.sampleRate);
+        const src = ac.createBufferSource();
+        src.buffer = buf;
+        src.connect(ac.destination);
+        src.start();
+      } catch(e) {}
+    }
+    playSound('fight');
+    splash.style.opacity = '0';
+    setTimeout(() => {
+      splash.classList.add('hidden');
+      splash.style.opacity = '';
+      runBattle();
+    }, 400);
+  }
+
+  document.getElementById('splash').addEventListener('click', () => {
+    startFromSplash();
+  }, { once: true });
+
+  document.addEventListener('keydown', function splashKey(e) {
+    const splash = document.getElementById('splash');
+    if (!splash.classList.contains('hidden')) {
+      document.removeEventListener('keydown', splashKey);
+      startFromSplash();
+    }
   });
 
-  window.addEventListener('pointerdown', () => ensureAudio(), { once: true });
-  window.addEventListener('keydown', () => ensureAudio(), { once: true });
+  document.fonts.ready.then(() => showSplash());
 
   scheduleMidnightBattle();
 })();
