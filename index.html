@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE BIG BATHROOM — Who Goes Tonight?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Bangers&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #08080c;
+    --panel: #121218;
+    --panel-2: #181824;
+    --line: #2b2b3a;
+    --text: #f8f2e7;
+    --muted: #7f8093;
+
+    --misha: #ff7b39;
+    --misha-2: #ffb347;
+    --misha-deep: #402114;
+    --misha-glow: rgba(255, 123, 57, 0.35);
+
+    --maggie: #11ddb2;
+    --maggie-2: #73fff0;
+    --maggie-deep: #10302a;
+    --maggie-glow: rgba(17, 221, 178, 0.32);
+
+    --gold: #ffd447;
+    --danger: #ff4f6f;
+  }
+
+  html, body {
+    height: 100%;
+    background:
+      radial-gradient(circle at 20% 18%, rgba(255,123,57,0.08), transparent 24%),
+      radial-gradient(circle at 82% 20%, rgba(17,221,178,0.08), transparent 24%),
+      linear-gradient(180deg, #050507, #090911 45%, #0d0d14);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  .battle-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(4, 4, 8, 0.97);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.65s ease;
+  }
+
+  .battle-overlay.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .battle-overlay.hidden {
+    display: none;
+  }
+
+  #battleCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  .battle-hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .hud-top {
+    position: absolute;
+    inset: 1.4rem 1rem auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(0.5rem, 2vw, 1rem);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .hud-top.visible { opacity: 1; }
+
+  .hb {
+    width: min(39vw, 360px);
+    min-width: 0;
+  }
+
+  .hb.right { text-align: right; }
+
+  .hb-name {
+    font-size: clamp(0.45rem, 1.5vw, 0.72rem);
+    margin-bottom: 0.38rem;
+    letter-spacing: 0.16em;
+  }
+
+  .hb.left .hb-name { color: var(--misha-2); }
+  .hb.right .hb-name { color: var(--maggie-2); }
+
+  .hb-track {
+    position: relative;
+    height: clamp(11px, 1.9vw, 18px);
+    background: #1b1d28;
+    border: 2px solid #3a4054;
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.25);
+    overflow: hidden;
+  }
+
+  .hb-fill {
+    height: 100%;
+    transition: width 0.22s linear, background 0.22s linear;
+  }
+
+  .hb.left .hb-fill {
+    background: linear-gradient(90deg, #ffe26b, var(--misha), #ff5e2f);
+  }
+
+  .hb.right .hb-fill {
+    float: right;
+    background: linear-gradient(270deg, #c4fff9, var(--maggie), #00d8ff);
+  }
+
+  .hb-hp {
+    margin-top: 0.35rem;
+    color: #8a8ea4;
+    font-size: clamp(0.33rem, 1vw, 0.46rem);
+  }
+
+  .round-box {
+    width: clamp(66px, 11vw, 92px);
+    min-height: clamp(54px, 10vw, 72px);
+    background: linear-gradient(180deg, #1d2231, #131723);
+    border: 3px solid #4d566f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 24px rgba(0,0,0,0.35);
+  }
+
+  .round-label {
+    color: #9aa0b8;
+    font-size: clamp(0.22rem, 0.7vw, 0.34rem);
+    margin-bottom: 0.2rem;
+    letter-spacing: 0.14em;
+  }
+
+  .round-value {
+    color: var(--gold);
+    font-size: clamp(0.85rem, 2.8vw, 1.5rem);
+    text-shadow: 2px 2px 0 #000;
+  }
+
+  .battle-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    opacity: 0;
+    white-space: nowrap;
+    text-align: center;
+    transition: opacity 0.16s ease;
+    font-size: clamp(0.95rem, 4.2vw, 2.7rem);
+    text-shadow: 3px 3px 0 #000, 0 0 16px rgba(0,0,0,0.35);
+  }
+
+  .battle-text.visible { opacity: 1; }
+  .battle-text.white { color: #fff8df; }
+  .battle-text.misha-color { color: var(--misha-2); }
+  .battle-text.maggie-color { color: var(--maggie-2); }
+
+  .battle-text.ko {
+    color: var(--gold);
+    font-size: clamp(1.9rem, 8vw, 5rem);
+    text-shadow: 4px 4px 0 #8f6500, -2px -2px 0 #000, 0 0 24px rgba(255,212,71,0.25);
+  }
+
+  .winner-box {
+    position: absolute;
+    left: 50%;
+    bottom: 10%;
+    transform: translateX(-50%);
+    width: min(86vw, 620px);
+    text-align: center;
+    background: rgba(10, 12, 18, 0.86);
+    border: 3px solid rgba(255,255,255,0.08);
+    box-shadow: 0 18px 46px rgba(0,0,0,0.34);
+    padding: 1rem 1rem 0.9rem;
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .winner-box.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .winner-box .wb-sub {
+    color: #8d91a7;
+    font-size: clamp(0.3rem, 1vw, 0.48rem);
+    letter-spacing: 0.18em;
+    margin-bottom: 0.65rem;
+  }
+
+  .winner-box .wb-name {
+    font-size: clamp(0.95rem, 4vw, 2rem);
+    margin-bottom: 0.65rem;
+    text-shadow: 3px 3px 0 #000;
+  }
+
+  .winner-box .wb-name.for-misha { color: var(--misha-2); }
+  .winner-box .wb-name.for-maggie { color: var(--maggie-2); }
+
+  .winner-box .wb-stamp {
+    display: inline-block;
+    color: rgba(255,79,111,0.86);
+    border: 2px solid rgba(255,79,111,0.56);
+    padding: 0.4rem 0.65rem;
+    font-size: clamp(0.28rem, 0.85vw, 0.42rem);
+    letter-spacing: 0.14em;
+    transform: rotate(-4deg);
+  }
+
+  .main-content {
+    opacity: 0;
+    transition: opacity 0.85s ease;
+    min-height: 100%;
+    padding-bottom: 5.5rem;
+  }
+
+  .main-content.visible { opacity: 1; }
+
+  .header {
+    text-align: center;
+    padding: 1.8rem 1rem 0.4rem;
+  }
+
+  .header h1 {
+    font-family: 'Bangers', cursive;
+    font-size: clamp(2.4rem, 8vw, 5.6rem);
+    line-height: 1;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ffd447 0%, #ff7b39 25%, #ff8a3c 50%, #ff5e2f 75%, #ffd447 100%);
+    background-size: 280% 280%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 24px rgba(255,123,57,0.22));
+  }
+
+  .header .subtitle {
+    margin-top: 0.45rem;
+    color: #6e7185;
+    font-size: clamp(0.42rem, 1.2vw, 0.56rem);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .arena {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    width: min(980px, calc(100% - 2rem));
+    margin: 0.8rem auto 0;
+  }
+
+  .fighter-card {
+    flex: 1;
+    min-height: 360px;
+    padding: 1.4rem 1rem 1.2rem;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.02), transparent 18%),
+      linear-gradient(180deg, #121219, #0e0f15);
+    border: 3px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.55s ease, opacity 0.55s ease, border-color 0.55s ease, box-shadow 0.55s ease, filter 0.55s ease;
+  }
+
+  .fighter-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.55s ease;
+    pointer-events: none;
+  }
+
+  .fighter-card.misha::before {
+    background: radial-gradient(circle at 50% 35%, rgba(255,123,57,0.12), transparent 52%);
+  }
+
+  .fighter-card.maggie::before {
+    background: radial-gradient(circle at 50% 35%, rgba(17,221,178,0.12), transparent 52%);
+  }
+
+  .fighter-card.misha { border-color: #432517; }
+  .fighter-card.maggie { border-color: #153b34; }
+
+  .fighter-card.winner {
+    transform: scale(1.025);
+  }
+
+  .fighter-card.winner::before { opacity: 1; }
+
+  .fighter-card.misha.winner {
+    border-color: var(--misha);
+    box-shadow: 0 0 34px var(--misha-glow), inset 0 0 34px rgba(255,123,57,0.05);
+  }
+
+  .fighter-card.maggie.winner {
+    border-color: var(--maggie);
+    box-shadow: 0 0 34px var(--maggie-glow), inset 0 0 34px rgba(17,221,178,0.05);
+  }
+
+  .fighter-card.loser {
+    opacity: 0.33;
+    transform: scale(0.96);
+    filter: grayscale(0.7);
+  }
+
+  .pixel-portrait {
+    width: 136px;
+    height: 136px;
+    margin-bottom: 0.95rem;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border: 3px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .fc-crown {
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+    opacity: 0;
+    transform: translateY(6px) scale(0.9);
+    transition: opacity 0.48s ease, transform 0.48s ease;
+    filter: drop-shadow(0 0 8px rgba(255,212,71,0.42));
+  }
+
+  .fighter-card.winner .fc-crown {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .fc-name {
+    font-size: clamp(0.8rem, 2.5vw, 1.14rem);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.35rem;
+  }
+
+  .fighter-card.misha .fc-name { color: var(--misha-2); }
+  .fighter-card.maggie .fc-name { color: var(--maggie-2); }
+
+  .fc-tagline {
+    color: #656a7e;
+    font-size: clamp(0.27rem, 0.85vw, 0.42rem);
+    letter-spacing: 0.05em;
+    text-align: center;
+    line-height: 1.7;
+    margin-bottom: 0.45rem;
+  }
+
+  .fc-age {
+    color: #8a8ea1;
+    font-size: clamp(0.34rem, 1vw, 0.46rem);
+    letter-spacing: 0.14em;
+  }
+
+  .fc-status {
+    margin-top: 1rem;
+    min-height: 2.5em;
+    text-align: center;
+    line-height: 1.7;
+    font-size: clamp(0.34rem, 1.1vw, 0.52rem);
+    letter-spacing: 0.06em;
+  }
+
+  .fighter-card.misha.winner .fc-status { color: var(--misha-2); }
+  .fighter-card.maggie.winner .fc-status { color: var(--maggie-2); }
+  .fighter-card.loser .fc-status { color: #323444; }
+
+  .vs {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    color: #3a3d4d;
+    font-size: clamp(1rem, 3vw, 1.6rem);
+    text-shadow: 2px 2px 0 #000;
+  }
+
+  .scoreboard {
+    width: min(620px, calc(100% - 2rem));
+    margin: 1.25rem auto 0;
+    text-align: center;
+  }
+
+  .day-counter {
+    color: #666b82;
+    font-size: clamp(0.4rem, 1.2vw, 0.56rem);
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+  }
+
+  .day-num {
+    display: inline-block;
+    margin: 0 0.18rem;
+    padding: 0.25em 0.52em;
+    color: #fff;
+    background: rgba(255,255,255,0.09);
+  }
+
+  .decree {
+    position: relative;
+    margin-top: 1rem;
+    padding: 1rem 1rem 0.95rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+    border: 2px solid rgba(255,255,255,0.08);
+  }
+
+  .decree::before {
+    content: '\2696\FE0F';
+    position: absolute;
+    top: -0.78rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0b0b11;
+    padding: 0 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .decree p {
+    color: #5e6378;
+    line-height: 2.15;
+    font-size: clamp(0.28rem, 0.82vw, 0.41rem);
+  }
+
+  .decree strong { color: #9ca2ba; }
+
+  .date-info {
+    margin-top: 0.8rem;
+    color: #4f5368;
+    font-size: clamp(0.24rem, 0.68vw, 0.35rem);
+    letter-spacing: 0.08em;
+    line-height: 1.8;
+  }
+
+  .replay-btn {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 400;
+    background: linear-gradient(180deg, #191c29, #11131c);
+    color: #aeb4cb;
+    border: 2px solid #363b4d;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.32rem, 0.85vw, 0.44rem);
+    padding: 0.8em 1.1em;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+  }
+
+  .replay-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .replay-btn:hover {
+    border-color: #667089;
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  .sound-btn {
+    position: fixed;
+    right: 1rem;
+    bottom: 4.2rem;
+    z-index: 400;
+    background: linear-gradient(180deg, #191c29, #11131c);
+    color: #aeb4cb;
+    border: 2px solid #363b4d;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(0.32rem, 0.85vw, 0.44rem);
+    padding: 0.8em 1.1em;
+    cursor: pointer;
+    transition: opacity 0.35s ease, transform 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+  }
+
+  .sound-btn:hover {
+    border-color: #667089;
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 760px) {
+    .arena {
+      flex-direction: column;
+      width: min(560px, calc(100% - 1rem));
+      gap: 0.8rem;
+    }
+
+    .fighter-card { min-height: 270px; }
+
+    .vs {
+      position: static;
+      transform: none;
+      text-align: center;
+      margin: -0.2rem 0;
+    }
+
+    .hud-top {
+      inset: 0.9rem 0.5rem auto;
+      gap: 0.4rem;
+    }
+
+    .round-box {
+      width: 62px;
+      min-height: 50px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="battle-overlay" id="battleOverlay">
+  <canvas id="battleCanvas"></canvas>
+  <div class="battle-hud">
+    <div class="hud-top" id="hbRow">
+      <div class="hb left">
+        <div class="hb-name">MISHA</div>
+        <div class="hb-track"><div class="hb-fill" id="cowHPBar" style="width:100%"></div></div>
+        <div class="hb-hp" id="cowHPText">100</div>
+      </div>
+      <div class="round-box">
+        <div class="round-label">ROUND</div>
+        <div class="round-value" id="roundValue">1</div>
+      </div>
+      <div class="hb right">
+        <div class="hb-name">MAGGIE</div>
+        <div class="hb-track"><div class="hb-fill" id="skaterHPBar" style="width:100%"></div></div>
+        <div class="hb-hp" id="skaterHPText">100</div>
+      </div>
+    </div>
+    <div class="battle-text" id="battleText"></div>
+    <div class="winner-box" id="winnerBox">
+      <div class="wb-sub">BIG BATHROOM GOES TO</div>
+      <div class="wb-name" id="wbName"></div>
+      <div class="wb-stamp">NO APPEALS</div>
+    </div>
+  </div>
+</div>
+
+<div class="main-content" id="mainContent">
+  <div class="header">
+    <h1>The Big Bathroom</h1>
+    <div class="subtitle">Tonight's Champion</div>
+  </div>
+
+  <div class="arena">
+    <div class="fighter-card misha" id="mishaCard">
+      <div class="fc-crown">&#x1F451;</div>
+      <canvas class="pixel-portrait" id="cowPortrait" width="48" height="40"></canvas>
+      <div class="fc-name">Misha</div>
+      <div class="fc-tagline">Highland Cow Enthusiast</div>
+      <div class="fc-age">AGE <span id="mishaAge"></span></div>
+      <div class="fc-status" id="mishaStatus"></div>
+    </div>
+
+    <div class="vs">VS</div>
+
+    <div class="fighter-card maggie" id="maggieCard">
+      <div class="fc-crown">&#x1F451;</div>
+      <canvas class="pixel-portrait" id="skaterPortrait" width="48" height="40"></canvas>
+      <div class="fc-name">Maggie</div>
+      <div class="fc-tagline">Pianist &amp; Figure Skater</div>
+      <div class="fc-age">AGE <span id="maggieAge"></span></div>
+      <div class="fc-status" id="maggieStatus"></div>
+    </div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="day-counter">DAY <span class="day-num" id="dayNum"></span> OF THE BIG BATHROOM LAW</div>
+    <div class="decree">
+      <p>By <strong>Parental Decree</strong> of March 12 2026 — after years of nightly argument — the Big Bathroom shall be shared in <strong>strict alternation</strong>. Misha won the inaugural coin toss. Odd days: Misha. Even days: Maggie. <strong>No exceptions. No appeals.</strong></p>
+    </div>
+    <div class="date-info" id="dateInfo"></div>
+  </div>
+</div>
+
+<button class="replay-btn" id="replayBtn">&#9654; REPLAY BATTLE</button>
+<button class="sound-btn" id="soundBtn">&#x1F50A; SOUND ON</button>
+
+<script>
+(function() {
+  const TZ = 'America/Vancouver';
+  const START = { y: 2026, m: 3, d: 12 };
+  const MISHA_BORN = { y: 2018, m: 10, d: 1 };
+  const MAGGIE_BORN = { y: 2015, m: 12, d: 3 };
+
+  const GW = 320;
+  const GH = 180;
+  const FLOOR_Y = 148;
+  const COW_HOME = 58;
+  const SKATER_HOME = 247;
+
+  const PALETTE = {
+    cream: '#F5E6C8', horn: '#D8C39B', cowHair: '#D08A4E', cowHair2: '#B86F38', cowBody: '#8B5B38', cowDark: '#5C371C', cowNose: '#F0B6B8', cowNose2: '#C98082',
+    skin: '#F7D6B4', hair: '#3D2947', dress: '#7B68EE', dress2: '#B06BFF', skate: '#C9D6DE', blade: '#7A8898', black: '#111', white: '#fff',
+    bg: '#090912', floor: '#171a2a', floorLine: '#262c41'
+  };
+
+  const overlay = document.getElementById('battleOverlay');
+  const mainContent = document.getElementById('mainContent');
+  const replayBtn = document.getElementById('replayBtn');
+  const battleText = document.getElementById('battleText');
+  const hbRow = document.getElementById('hbRow');
+  const cowHPBar = document.getElementById('cowHPBar');
+  const skaterHPBar = document.getElementById('skaterHPBar');
+  const cowHPText = document.getElementById('cowHPText');
+  const skaterHPText = document.getElementById('skaterHPText');
+  const winnerBox = document.getElementById('winnerBox');
+  const wbName = document.getElementById('wbName');
+  const roundValue = document.getElementById('roundValue');
+
+  const canvas = document.getElementById('battleCanvas');
+  const ctx = canvas.getContext('2d', { alpha: false });
+
+  let audioCtx = null;
+  let soundEnabled = true;
+
+  let midnightTimer = null;
+  let runningBattle = false;
+  let battleToken = 0;
+
+  const game = {
+    frame: 0,
+    cow: { x: -40, y: 0, hp: 100, baseX: COW_HOME, flash: 0, pose: 'idle', facing: 1, spin: 0, aura: 0, koTilt: 0 },
+    skater: { x: GW + 40, y: 0, hp: 100, baseX: SKATER_HOME, flash: 0, pose: 'idle', facing: -1, spin: 0, aura: 0, koTilt: 0 },
+    effects: [],
+    damageTexts: [],
+    shake: { x: 0, y: 0, intensity: 0 },
+    crowd: [],
+    winner: null
+  };
+
+  function mulberry32(a) {
+    return function() {
+      a |= 0;
+      a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function getDatePartsInTimeZone(date = new Date(), timeZone = TZ) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date);
+    return {
+      y: Number(parts.find(p => p.type === 'year').value),
+      m: Number(parts.find(p => p.type === 'month').value),
+      d: Number(parts.find(p => p.type === 'day').value)
+    };
+  }
+
+  function dateKey(parts) {
+    return `${parts.y}-${String(parts.m).padStart(2, '0')}-${String(parts.d).padStart(2, '0')}`;
+  }
+
+  function daysBetweenParts(a, b) {
+    const ua = Date.UTC(a.y, a.m - 1, a.d);
+    const ub = Date.UTC(b.y, b.m - 1, b.d);
+    return Math.floor((ub - ua) / 86400000);
+  }
+
+  function ageOn(birth, today) {
+    let age = today.y - birth.y;
+    if (today.m < birth.m || (today.m === birth.m && today.d < birth.d)) age--;
+    return age;
+  }
+
+  function getBattleDayState() {
+    const today = getDatePartsInTimeZone();
+    const dayNumber = daysBetweenParts(START, today) + 1;
+    const isMisha = dayNumber % 2 === 1;
+    return { today, dayNumber, isMisha, winner: isMisha ? 'cow' : 'skater' };
+  }
+
+  function formatLongVancouverDate() {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: TZ,
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(new Date()) + ' \u2014 Vancouver, BC';
+  }
+
+  function resetUi() {
+    battleText.className = 'battle-text';
+    battleText.textContent = '';
+    hbRow.classList.remove('visible');
+    winnerBox.classList.remove('visible');
+    roundValue.textContent = '1';
+    cowHPBar.style.width = '100%';
+    skaterHPBar.style.width = '100%';
+    cowHPBar.style.background = 'linear-gradient(90deg, #ffe26b, var(--misha), #ff5e2f)';
+    skaterHPBar.style.background = 'linear-gradient(270deg, #c4fff9, var(--maggie), #00d8ff)';
+    cowHPText.textContent = '100';
+    skaterHPText.textContent = '100';
+  }
+
+  function resetGame() {
+    game.frame = 0;
+    game.cow = { x: -40, y: 0, hp: 100, baseX: COW_HOME, flash: 0, pose: 'idle', facing: 1, spin: 0, aura: 0, koTilt: 0 };
+    game.skater = { x: GW + 40, y: 0, hp: 100, baseX: SKATER_HOME, flash: 0, pose: 'idle', facing: -1, spin: 0, aura: 0, koTilt: 0 };
+    game.effects = [];
+    game.damageTexts = [];
+    game.shake = { x: 0, y: 0, intensity: 0 };
+    game.winner = null;
+    game.stage = null;
+    const rng = mulberry32(12345);
+    game.crowd = Array.from({ length: 30 }, (_, i) => ({
+      x: 8 + i * 10,
+      h: 4 + Math.floor(rng() * 10),
+      blink: Math.floor(rng() * 200)
+    }));
+  }
+
+  // ==================== SOUND ====================
+  function ensureAudio() {
+    if (!soundEnabled) return null;
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function tone(freq, duration, type = 'square', volume = 0.03, when = 0) {
+    const ac = ensureAudio();
+    if (!ac) return;
+    const start = ac.currentTime + when;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.02);
+  }
+
+  function noiseBurst(duration = 0.08, volume = 0.02, when = 0) {
+    const ac = ensureAudio();
+    if (!ac) return;
+    const sampleRate = ac.sampleRate;
+    const length = Math.max(1, Math.floor(sampleRate * duration));
+    const buffer = ac.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+    const source = ac.createBufferSource();
+    const filter = ac.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 900;
+    const gain = ac.createGain();
+    const start = ac.currentTime + when;
+    source.buffer = buffer;
+    gain.gain.setValueAtTime(volume, start);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ac.destination);
+    source.start(start);
+    source.stop(start + duration + 0.02);
+  }
+
+  function playSound(name) {
+    if (!soundEnabled) return;
+    switch (name) {
+      case 'ready':
+        tone(392, 0.09, 'square', 0.025, 0);
+        tone(494, 0.11, 'square', 0.025, 0.11);
+        break;
+      case 'fight':
+        tone(220, 0.08, 'square', 0.035, 0);
+        tone(330, 0.08, 'square', 0.035, 0.08);
+        tone(440, 0.12, 'square', 0.04, 0.16);
+        noiseBurst(0.05, 0.01, 0.16);
+        break;
+      case 'hit':
+        tone(180, 0.05, 'square', 0.03, 0);
+        noiseBurst(0.05, 0.012, 0);
+        break;
+      case 'heavy-hit':
+        tone(140, 0.06, 'square', 0.035, 0);
+        tone(95, 0.08, 'triangle', 0.03, 0.04);
+        noiseBurst(0.09, 0.018, 0);
+        break;
+      case 'projectile':
+        tone(760, 0.06, 'square', 0.018, 0);
+        tone(620, 0.06, 'square', 0.016, 0.05);
+        break;
+      case 'ko':
+        tone(330, 0.08, 'square', 0.035, 0);
+        tone(247, 0.1, 'square', 0.035, 0.1);
+        tone(165, 0.18, 'triangle', 0.04, 0.22);
+        noiseBurst(0.12, 0.015, 0.02);
+        break;
+      case 'win-misha':
+        tone(262, 0.09, 'square', 0.03, 0);
+        tone(330, 0.09, 'square', 0.03, 0.1);
+        tone(392, 0.09, 'square', 0.03, 0.2);
+        tone(523, 0.22, 'triangle', 0.035, 0.32);
+        break;
+      case 'win-maggie':
+        tone(330, 0.08, 'square', 0.03, 0);
+        tone(392, 0.08, 'square', 0.03, 0.09);
+        tone(494, 0.08, 'square', 0.03, 0.18);
+        tone(659, 0.22, 'triangle', 0.035, 0.29);
+        break;
+      case 'replay':
+        tone(440, 0.05, 'square', 0.025, 0);
+        tone(660, 0.08, 'square', 0.025, 0.07);
+        break;
+    }
+  }
+
+  // ==================== HUD HELPERS ====================
+  function setBattleText(text, cls = 'white') {
+    battleText.textContent = text;
+    battleText.className = `battle-text visible ${cls}`;
+  }
+
+  function clearBattleText() {
+    battleText.className = 'battle-text';
+    battleText.textContent = '';
+  }
+
+  function wait(ms, token) {
+    return new Promise(resolve => {
+      setTimeout(() => resolve(token === battleToken), ms);
+    });
+  }
+
+  function tween(obj, prop, target, duration, token, easing = 'out') {
+    return new Promise(resolve => {
+      const start = obj[prop];
+      const delta = target - start;
+      const t0 = performance.now();
+      function frame(now) {
+        if (token !== battleToken) return resolve(false);
+        const t = Math.min((now - t0) / duration, 1);
+        const e = easing === 'out' ? 1 - Math.pow(1 - t, 3) : easing === 'in' ? t * t * t : t;
+        obj[prop] = start + delta * e;
+        if (t < 1) requestAnimationFrame(frame);
+        else resolve(true);
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  // ==================== EFFECTS ====================
+  function addShake(intensity) {
+    game.shake.intensity = Math.max(game.shake.intensity, intensity);
+  }
+
+  function updateShake() {
+    if (game.shake.intensity > 0.3) {
+      game.shake.x = (Math.random() - 0.5) * game.shake.intensity;
+      game.shake.y = (Math.random() - 0.5) * game.shake.intensity;
+      game.shake.intensity *= 0.82;
+    } else {
+      game.shake.x = 0;
+      game.shake.y = 0;
+      game.shake.intensity = 0;
+    }
+  }
+
+  function pushParticle(x, y, opts = {}) {
+    game.effects.push({
+      x, y,
+      vx: opts.vx ?? ((Math.random() - 0.5) * 2.5),
+      vy: opts.vy ?? (-Math.random() * 2.6),
+      life: opts.life ?? 22,
+      maxLife: opts.maxLife ?? 22,
+      size: opts.size ?? 2,
+      type: opts.type ?? 'impact',
+      color: opts.color,
+      gravity: opts.gravity ?? 0.12,
+      projectile: opts.projectile ?? false,
+      trail: opts.trail ?? false
+    });
+  }
+
+  function addBurst(x, y, type, count, dir = 0) {
+    for (let i = 0; i < count; i++) {
+      const spread = type === 'ice' ? 2.2 : 2.8;
+      pushParticle(x, y, {
+        type,
+        vx: (Math.random() - 0.5) * spread + dir * 0.4,
+        vy: -Math.random() * (type === 'dust' ? 1.7 : 3.1),
+        life: 20 + Math.random() * 20,
+        maxLife: 32,
+        size: 1 + Math.floor(Math.random() * 3),
+        gravity: type === 'ice' ? 0.08 : 0.14
+      });
+    }
+  }
+
+  function addDamageText(x, y, damage) {
+    game.damageTexts.push({ x, y, damage, life: 40, maxLife: 40 });
+  }
+
+  function addProjectile(fromX, fromY, toX, type) {
+    const dx = toX - fromX;
+    pushParticle(fromX, fromY, {
+      type,
+      vx: dx / 16,
+      vy: 0,
+      life: 18,
+      maxLife: 18,
+      size: type === 'moo' ? 4 : 3,
+      gravity: 0,
+      projectile: true,
+      trail: true
+    });
+  }
+
+  function updateBar(el, hp, isRight) {
+    const clamped = Math.max(0, hp);
+    el.style.width = clamped + '%';
+    if (clamped < 25) {
+      el.style.background = 'linear-gradient(90deg, #ffd2d9, #ff4f6f)';
+    } else if (clamped < 50) {
+      el.style.background = 'linear-gradient(90deg, #ffe26b, #ffb000)';
+    } else {
+      el.style.background = isRight
+        ? 'linear-gradient(270deg, #c4fff9, var(--maggie), #00d8ff)'
+        : 'linear-gradient(90deg, #ffe26b, var(--misha), #ff5e2f)';
+    }
+  }
+
+  // ==================== MOVES ====================
+  const COW_MOVES = [
+    { name: 'HEADBUTT!', anim: 'rush', particles: 'impact' },
+    { name: 'HOOF STOMP!', anim: 'jump', particles: 'dust' },
+    { name: 'TAIL WHIP!', anim: 'spin', particles: 'dust' },
+    { name: 'MOO BLAST!', anim: 'ranged', particles: 'moo' },
+    { name: 'HORN TOSS!', anim: 'rush', particles: 'spark' },
+    { name: 'HIGHLAND CHARGE!', anim: 'rush', particles: 'impact', finisher: true }
+  ];
+
+  const SKATER_MOVES = [
+    { name: 'SPIN KICK!', anim: 'spin', particles: 'ice' },
+    { name: 'ICE SHARD!', anim: 'ranged', particles: 'shard' },
+    { name: 'TRIPLE AXEL!', anim: 'jump', particles: 'ice' },
+    { name: 'SKATE SLASH!', anim: 'rush', particles: 'impact' },
+    { name: 'PIROUETTE!', anim: 'spin', particles: 'ice' },
+    { name: 'QUAD LUTZ!', anim: 'jump', particles: 'ice', finisher: true }
+  ];
+
+  // ==================== STAGES ====================
+  const STAGES = [
+    { name: 'THE BIG BATHROOM', sky1: '#b0cce0', sky2: '#d0e4f0', fl: '#d0d4dc', fll: '#bcc0c8',
+      bl: '#b4c0cc', rl: '#98a4b0', cA: '#6888a0', cB: '#7898ac', cH: '#88b0c8',
+      bg(c, f) {
+        // Tile wall
+        c.fillStyle = '#c4d8e4';
+        for (let ty = 0; ty < FLOOR_Y - 18; ty += 12)
+          for (let tx = 0; tx < GW; tx += 16) c.fillRect(tx, ty, 14, 10);
+        // Bathtub
+        c.fillStyle = '#e4e8ec'; c.fillRect(18, FLOOR_Y-52, 64, 32);
+        c.fillStyle = '#ccd4dc'; c.fillRect(18, FLOOR_Y-52, 64, 3); c.fillRect(18, FLOOR_Y-52, 3, 32); c.fillRect(79, FLOOR_Y-52, 3, 32);
+        // Faucet
+        c.fillStyle = '#98a0a8'; c.fillRect(68, FLOOR_Y-60, 4, 10); c.fillRect(64, FLOOR_Y-60, 12, 3);
+        // Rubber duck
+        c.fillStyle = '#ffd447'; c.fillRect(42, FLOOR_Y-48, 8, 6); c.fillRect(40, FLOOR_Y-52, 6, 5);
+        c.fillStyle = '#ff8c00'; c.fillRect(39, FLOOR_Y-50, 2, 2);
+        // Shower
+        c.fillStyle = '#98a0a8'; c.fillRect(250, 8, 3, 82); c.fillRect(244, 8, 12, 4);
+        if (f % 12 < 6) { c.fillStyle = 'rgba(80,160,240,0.35)'; c.fillRect(245, 18+(f%28), 2, 3); c.fillRect(248, 26+(f%22), 2, 3); }
+        // Towels
+        c.fillStyle = '#8090a0'; c.fillRect(168, FLOOR_Y-62, 42, 2);
+        c.fillStyle = '#4488cc'; c.fillRect(172, FLOOR_Y-60, 14, 16);
+        c.fillStyle = '#ff6688'; c.fillRect(190, FLOOR_Y-60, 14, 16);
+      }},
+    { name: 'JUNGLE RUINS', sky1: '#081e0c', sky2: '#0c3018',  fl: '#382818', fll: '#483828',
+      bl: '#162e1c', rl: '#244028', cA: '#1a3828', cB: '#204430', cH: '#3a6840',
+      bg(c, f) {
+        // Canopy layers
+        for (let i = 0; i < 12; i++) {
+          c.fillStyle = i % 3 ? '#145020' : '#1c6028';
+          c.fillRect(i * 28 - 4, (i % 3) * 8, 32, 22 + (i % 2) * 12);
+        }
+        // Trunks
+        c.fillStyle = '#4a3020';
+        c.fillRect(28, 18, 8, FLOOR_Y - 36); c.fillRect(128, 8, 10, FLOOR_Y - 26); c.fillRect(228, 22, 7, FLOOR_Y - 40);
+        // Vines
+        c.fillStyle = '#286828';
+        c.fillRect(58, 6, 2, 42 + Math.sin(f*.04)*3|0); c.fillRect(178, 2, 2, 52); c.fillRect(278, 10, 2, 36);
+        // Stone blocks
+        c.fillStyle = '#686e60'; c.fillRect(78, FLOOR_Y-42, 22, 12); c.fillRect(76, FLOOR_Y-30, 26, 12);
+        c.fillStyle = '#5c6254'; c.fillRect(198, FLOOR_Y-36, 20, 18);
+      }},
+    { name: 'TOKYO NEON', sky1: '#0a0820', sky2: '#141030', fl: '#181828', fll: '#282840',
+      bl: '#10102a', rl: '#2a2848', cA: '#201e3c', cB: '#282650', cH: '#4844a0',
+      bg(c, f) {
+        // Buildings
+        const blds = [[10,40,28],[44,20,24],[76,55,20],[110,30,30],[150,15,26],[186,50,22],[218,25,28],[254,45,24],[288,35,22]];
+        for (const [bx,bh,bw] of blds) {
+          c.fillStyle = '#14122a'; c.fillRect(bx, FLOOR_Y-18-bh, bw, bh);
+          // Windows
+          for (let wy = FLOOR_Y-16-bh; wy < FLOOR_Y-22; wy += 8)
+            for (let wx = bx+3; wx < bx+bw-3; wx += 6) {
+              c.fillStyle = ((wx+wy+f)%40<15) ? '#ffe888' : '#2a284a'; c.fillRect(wx, wy, 3, 4);
+            }
+        }
+        // Neon signs
+        c.fillStyle = '#ff2080'; c.fillRect(50, FLOOR_Y-68, 20, 6);
+        c.fillStyle = '#00e8ff'; c.fillRect(170, FLOOR_Y-58, 24, 5);
+        c.fillStyle = f%30<15 ? '#ff44aa' : '#ff2080'; c.fillRect(260, FLOOR_Y-72, 16, 5);
+        // Wet reflections
+        c.fillStyle = 'rgba(0,200,255,0.06)'; c.fillRect(0, FLOOR_Y, GW, GH-FLOOR_Y);
+      }},
+    { name: 'DEATH VALLEY', sky1: '#cc5522', sky2: '#ff8844', fl: '#c8a870', fll: '#b89860',
+      bl: '#a08050', rl: '#907040', cA: '#806840', cB: '#907848', cH: '#b09060',
+      bg(c, f) {
+        // Sun
+        c.fillStyle = '#ffe040'; c.fillRect(240, 18, 30, 30); c.fillRect(238, 20, 34, 26); c.fillRect(242, 16, 26, 34);
+        c.fillStyle = '#fff8a0'; c.fillRect(248, 26, 14, 14);
+        // Mesas
+        c.fillStyle = '#803820'; c.fillRect(20, FLOOR_Y-60, 50, 42); c.fillRect(30, FLOOR_Y-72, 30, 14);
+        c.fillStyle = '#6c2e18'; c.fillRect(180, FLOOR_Y-44, 40, 26); c.fillRect(186, FLOOR_Y-54, 28, 12);
+        // Cacti
+        c.fillStyle = '#448830';
+        c.fillRect(120, FLOOR_Y-38, 4, 20); c.fillRect(112, FLOOR_Y-32, 8, 4); c.fillRect(124, FLOOR_Y-28, 8, 4);
+        c.fillRect(270, FLOOR_Y-30, 4, 12); c.fillRect(266, FLOOR_Y-26, 4, 3);
+        // Cracked ground lines
+        c.fillStyle = '#b08848';
+        for (let cx = 20; cx < GW; cx += 38) c.fillRect(cx, FLOOR_Y+4, 14, 1);
+      }},
+    { name: 'LUNAR SURFACE', sky1: '#020208', sky2: '#060612', fl: '#484850', fll: '#585860',
+      bl: '#2a2a30', rl: '#3a3a44', cA: '#303038', cB: '#383840', cH: '#58586c',
+      bg(c, f) {
+        // Stars
+        const sr = mulberry32(777);
+        c.fillStyle = '#888'; for (let i = 0; i < 50; i++) c.fillRect(sr()*GW|0, sr()*(FLOOR_Y-30)|0, 1, 1);
+        c.fillStyle = '#ccc'; for (let i = 0; i < 15; i++) c.fillRect(sr()*GW|0, sr()*(FLOOR_Y-30)|0, 1, 1);
+        // Earth
+        c.fillStyle = '#2244aa'; c.fillRect(240, 14, 24, 24); c.fillRect(238, 16, 28, 20); c.fillRect(242, 12, 20, 28);
+        c.fillStyle = '#33aa55'; c.fillRect(244, 18, 8, 6); c.fillRect(254, 24, 6, 8);
+        c.fillStyle = '#fff'; c.fillRect(248, 14, 4, 3); c.fillRect(258, 28, 5, 3);
+        // Craters
+        c.fillStyle = '#404048'; c.fillRect(40, FLOOR_Y+4, 16, 4); c.fillRect(42, FLOOR_Y+2, 12, 8);
+        c.fillRect(200, FLOOR_Y+6, 10, 3); c.fillRect(201, FLOOR_Y+5, 8, 5);
+        c.fillRect(140, FLOOR_Y+2, 20, 5); c.fillRect(142, FLOOR_Y, 16, 9);
+        // Footprints
+        c.fillStyle = '#505058';
+        for (let fx = 80; fx < 180; fx += 12) c.fillRect(fx, FLOOR_Y + 10 + (fx%2)*2, 4, 2);
+      }},
+    { name: 'FROZEN LAKE', sky1: '#a0c8e8', sky2: '#c8e0f0', fl: '#90c8e0', fll: '#80b8d0',
+      bl: '#7098b0', rl: '#6088a0', cA: '#5878a0', cB: '#6888b0', cH: '#88b0d0',
+      bg(c, f) {
+        // Mountains
+        const mts = [[0,58,80],[60,72,90],[140,50,70],[210,80,100],[280,54,60]];
+        for (const [mx,mh,mw] of mts) {
+          c.fillStyle = '#d0dce8'; for (let r = 0; r < mh; r++) { const w = mw*(1-r/mh)|0; c.fillRect(mx+(mw-w)/2|0, FLOOR_Y-18-mh+r, w, 1); }
+          c.fillStyle = '#e8f0f8'; for (let r = 0; r < mh*.3|0; r++) { const w = mw*(1-r/mh)*.6|0; c.fillRect(mx+(mw-w)/2|0, FLOOR_Y-18-mh+r, w, 1); }
+        }
+        // Aurora
+        c.globalAlpha = 0.18;
+        c.fillStyle = '#40ff80'; c.fillRect(0, 12+Math.sin(f*.02)*4|0, GW, 4);
+        c.fillStyle = '#8040ff'; c.fillRect(0, 24+Math.sin(f*.025+1)*3|0, GW, 3);
+        c.fillStyle = '#40c0ff'; c.fillRect(0, 34+Math.sin(f*.03+2)*3|0, GW, 3);
+        c.globalAlpha = 1;
+        // Ice sparkles
+        if (f % 6 < 3) { c.fillStyle = '#e0f8ff'; c.fillRect(50+(f*3%200), FLOOR_Y+4, 2, 1); c.fillRect(180+(f*7%120), FLOOR_Y+8, 2, 1); }
+      }},
+    { name: 'VOLCANO ISLAND', sky1: '#2a0808', sky2: '#441810', fl: '#2a2020', fll: '#3a2828',
+      bl: '#1c1212', rl: '#342020', cA: '#2a1818', cB: '#3a2020', cH: '#6a3030',
+      bg(c, f) {
+        // Volcano
+        c.fillStyle = '#241810';
+        for (let r = 0; r < 80; r++) { const w = 60*(1-r/80)|0; c.fillRect(GW/2-w/2, FLOOR_Y-18-80+r, w, 1); }
+        // Lava glow at top
+        c.fillStyle = f%10<5 ? '#ff4420' : '#ff6830'; c.fillRect(GW/2-8, FLOOR_Y-98, 16, 6);
+        c.fillStyle = '#ff8840'; c.fillRect(GW/2-4, FLOOR_Y-100, 8, 4);
+        // Lava streams
+        c.fillStyle = '#ff4420';
+        c.fillRect(GW/2-12, FLOOR_Y-88, 2, 40); c.fillRect(GW/2+10, FLOOR_Y-82, 2, 34);
+        c.fillStyle = '#ff6830'; c.fillRect(GW/2-12, FLOOR_Y-48, 3, 30); c.fillRect(GW/2+10, FLOOR_Y-48, 3, 30);
+        // Lava pools
+        c.fillStyle = f%16<8 ? '#ff3010' : '#ff5020';
+        c.fillRect(20, FLOOR_Y+4, 24, 4); c.fillRect(240, FLOOR_Y+6, 30, 4);
+        // Smoke
+        c.fillStyle = 'rgba(60,40,30,0.3)';
+        c.fillRect(GW/2-14+(f*.3%20|0), FLOOR_Y-108-(f*.4%16|0), 6, 4);
+        c.fillRect(GW/2+4+(f*.5%14|0), FLOOR_Y-112-(f*.3%18|0), 5, 4);
+        // Red sky glow
+        c.globalAlpha = 0.12; c.fillStyle = '#ff2000'; c.fillRect(0, 0, GW, FLOOR_Y); c.globalAlpha = 1;
+      }},
+    { name: 'PIRATE DECK', sky1: '#cc5500', sky2: '#ff8830', fl: '#6a4828', fll: '#7a5838',
+      bl: '#4a3018', rl: '#5a3820', cA: '#3a2810', cB: '#483818', cH: '#686038',
+      bg(c, f) {
+        // Sun (setting)
+        c.fillStyle = '#ffcc20'; c.fillRect(60, 50, 22, 22); c.fillRect(58, 52, 26, 18); c.fillRect(62, 48, 18, 26);
+        // Ocean
+        c.fillStyle = '#1848a0'; c.fillRect(0, FLOOR_Y-60, GW, 42);
+        // Waves
+        c.fillStyle = '#2060b8';
+        for (let wx = 0; wx < GW; wx += 20) c.fillRect(wx + (Math.sin(f*.04+wx*.1)*4|0), FLOOR_Y-44, 12, 2);
+        c.fillStyle = '#2870c8';
+        for (let wx = 8; wx < GW; wx += 24) c.fillRect(wx + (Math.sin(f*.05+wx*.08)*3|0), FLOOR_Y-36, 10, 2);
+        // Masts
+        c.fillStyle = '#5a3820'; c.fillRect(80, 0, 3, FLOOR_Y-18); c.fillRect(220, 0, 3, FLOOR_Y-18);
+        // Sails
+        c.fillStyle = '#e8dcc8'; c.fillRect(60, 10, 22, 30); c.fillRect(200, 16, 22, 26);
+        // Rigging
+        c.fillStyle = '#4a3818'; c.fillRect(83, 10, 137, 1); c.fillRect(83, 30, 137, 1);
+        // Flag
+        c.fillStyle = '#222'; c.fillRect(80, 0, 14, 10);
+        c.fillStyle = '#fff'; c.fillRect(84, 3, 2, 1); c.fillRect(84, 5, 2, 1); c.fillRect(86, 4, 2, 1); // skull
+        // Plank lines
+        c.fillStyle = '#5a3820'; for (let py = FLOOR_Y; py < GH; py += 6) c.fillRect(0, py, GW, 1);
+      }},
+    { name: 'CANDY LAND', sky1: '#ffb0d0', sky2: '#ffd0e0', fl: '#ffaacc', fll: '#ff99bb',
+      bl: '#e090b0', rl: '#d080a0', cA: '#c07898', cB: '#d088a8', cH: '#e0a0c0',
+      bg(c, f) {
+        // Cotton candy clouds
+        c.fillStyle = '#ffc8e0'; c.fillRect(20, 16, 30, 12); c.fillRect(14, 20, 42, 8);
+        c.fillStyle = '#ffe0f0'; c.fillRect(180, 10, 36, 14); c.fillRect(174, 16, 48, 8);
+        c.fillRect(100, 28, 24, 10); c.fillRect(96, 32, 32, 6);
+        // Lollipop trees
+        const lollies = [[50,'#ff4444',8],[130,'#44cc44',7],[210,'#4488ff',8],[280,'#ffaa00',6]];
+        for (const [lx,lc,lr] of lollies) {
+          c.fillStyle = '#e8c8a0'; c.fillRect(lx, FLOOR_Y-50, 3, 32);
+          c.fillStyle = lc; c.fillRect(lx-lr, FLOOR_Y-50-lr*2, lr*2+3, lr*2); c.fillRect(lx-lr+2, FLOOR_Y-52-lr*2, lr*2-1, lr*2+4);
+          c.fillStyle = '#fff'; c.fillRect(lx-2, FLOOR_Y-50-lr, lr+2, 2);
+        }
+        // Rainbow floor stripes
+        const rainbow = ['#ff4444','#ff8844','#ffcc44','#44cc44','#4488ff','#8844cc'];
+        for (let ri = 0; ri < rainbow.length; ri++) {
+          c.fillStyle = rainbow[ri]; c.globalAlpha = 0.18; c.fillRect(0, FLOOR_Y + ri*5, GW, 5); c.globalAlpha = 1;
+        }
+      }},
+    { name: 'HAUNTED CASTLE', sky1: '#14081c', sky2: '#200e2c', fl: '#282030', fll: '#382840',
+      bl: '#18101e', rl: '#2a1c34', cA: '#201828', cB: '#281e30', cH: '#483860',
+      bg(c, f) {
+        // Moon
+        c.fillStyle = '#e8e0c0'; c.fillRect(230, 10, 28, 28); c.fillRect(228, 12, 32, 24); c.fillRect(232, 8, 24, 32);
+        c.fillStyle = '#d0c8a0'; c.fillRect(240, 18, 6, 4); c.fillRect(246, 26, 4, 4);
+        // Moon glow
+        c.globalAlpha = 0.06; c.fillStyle = '#e8e0c0'; c.fillRect(218, 0, 52, 50); c.globalAlpha = 1;
+        // Castle silhouette
+        c.fillStyle = '#0c0610';
+        c.fillRect(10, FLOOR_Y-80, 20, 62); c.fillRect(6, FLOOR_Y-86, 28, 8); // tower 1
+        c.fillRect(30, FLOOR_Y-50, 60, 32); // wall
+        c.fillRect(90, FLOOR_Y-74, 18, 56); c.fillRect(88, FLOOR_Y-80, 22, 8); // tower 2
+        c.fillRect(108, FLOOR_Y-44, 40, 26); // gate wall
+        // Crenellations
+        for (let cx = 30; cx < 88; cx += 8) c.fillRect(cx, FLOOR_Y-54, 4, 4);
+        for (let cx = 108; cx < 148; cx += 8) c.fillRect(cx, FLOOR_Y-48, 4, 4);
+        // Lit windows
+        c.fillStyle = '#ff8820';
+        c.fillRect(17, FLOOR_Y-70, 4, 6); c.fillRect(96, FLOOR_Y-66, 4, 6);
+        c.fillStyle = f%20<10 ? '#ff8820' : '#cc6610'; c.fillRect(50, FLOOR_Y-40, 6, 8); c.fillRect(72, FLOOR_Y-40, 6, 8);
+        // Bats
+        c.fillStyle = '#181020';
+        const b1x = 70 + Math.sin(f*.06)*30|0, b1y = 20 + Math.sin(f*.08)*8|0;
+        const b2x = 180 + Math.sin(f*.05+2)*26|0, b2y = 34 + Math.sin(f*.07+1)*6|0;
+        c.fillRect(b1x-3, b1y, 2, 1); c.fillRect(b1x, b1y-1, 2, 1); c.fillRect(b1x+3, b1y, 2, 1);
+        c.fillRect(b2x-3, b2y, 2, 1); c.fillRect(b2x, b2y-1, 2, 1); c.fillRect(b2x+3, b2y, 2, 1);
+        // Gravestones
+        c.fillStyle = '#383040';
+        c.fillRect(260, FLOOR_Y-28, 8, 10); c.fillRect(258, FLOOR_Y-30, 12, 4);
+        c.fillRect(290, FLOOR_Y-24, 6, 6); c.fillRect(289, FLOOR_Y-26, 8, 3);
+      }},
+  ];
+
+  // ==================== BATTLE GENERATION ====================
+  function distribute(total, count, rng, makeLastBig) {
+    if (count <= 0) return [];
+    const values = [];
+    let remaining = total;
+    for (let i = 0; i < count; i++) {
+      if (i === count - 1) {
+        values.push(Math.max(1, remaining));
+        break;
+      }
+      const slots = count - i;
+      let value = Math.floor((remaining / slots) * (0.6 + rng() * 0.9));
+      value = Math.max(4, Math.min(value, remaining - (slots - 1) * 4));
+      if (makeLastBig && i === count - 2) {
+        value = Math.min(value, remaining - Math.floor(total * 0.28));
+      }
+      values.push(value);
+      remaining -= value;
+    }
+    return values;
+  }
+
+  function generateBattle(dayNumber, isMisha) {
+    const rng = mulberry32(dayNumber * 7919 + 137);
+    const winner = isMisha ? 'cow' : 'skater';
+    const loser = isMisha ? 'skater' : 'cow';
+    const rounds = [];
+    const roundCount = 5 + Math.floor(rng() * 3);
+    const loserTotalDamage = 100;
+    const winnerTotalDamage = 25 + Math.floor(rng() * 36);
+
+    const attackers = [];
+    for (let i = 0; i < roundCount; i++) {
+      if (i === roundCount - 1) {
+        attackers.push(winner);
+      } else {
+        const bias = 0.34 + (i / roundCount) * 0.38;
+        attackers.push(rng() < bias ? winner : loser);
+      }
+    }
+
+    const winnerIndexes = [];
+    const loserIndexes = [];
+    attackers.forEach((a, i) => (a === winner ? winnerIndexes : loserIndexes).push(i));
+
+    const winnerDamages = distribute(loserTotalDamage, winnerIndexes.length, rng, true);
+    const loserDamages = distribute(winnerTotalDamage, loserIndexes.length, rng, false);
+
+    let wi = 0;
+    let li = 0;
+    for (let i = 0; i < roundCount; i++) {
+      const attacker = attackers[i];
+      const pool = attacker === 'cow' ? COW_MOVES : SKATER_MOVES;
+      const isFinisher = i === roundCount - 1;
+      const move = isFinisher ? (pool.find(m => m.finisher) || pool[0]) : pool[Math.floor(rng() * (pool.length - 1))];
+      const damage = attacker === winner ? winnerDamages[wi++] : loserDamages[li++];
+      rounds.push({ attacker, move, damage, isFinisher, round: i + 1, totalRounds: roundCount });
+    }
+    return rounds;
+  }
+
+  // ==================== DRAWING ====================
+  function drawRect(ctx2d, x, y, w, h, color) {
+    ctx2d.fillStyle = color;
+    ctx2d.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+  }
+
+  function drawCow(ctx2d, cx, cy, opts = {}) {
+    const pose = opts.pose || 'idle';
+    const flash = opts.flash || 0;
+    const bob = opts.bob || 0;
+    const spin = opts.spin || 0;
+    ctx2d.save();
+    ctx2d.translate(Math.floor(cx), Math.floor(cy + bob));
+    if (spin) ctx2d.rotate(spin);
+    const fc = flash > 0 ? '#fff' : null;
+    const C = {
+      cream: fc || PALETTE.cream, horn: fc || PALETTE.horn,
+      hair: fc || PALETTE.cowHair, hair2: fc || PALETTE.cowHair2,
+      body: fc || PALETTE.cowBody, dark: fc || PALETTE.cowDark,
+      nose: fc || PALETTE.cowNose, nose2: fc || PALETTE.cowNose2,
+      black: fc || PALETTE.black, white: fc || PALETTE.white
+    };
+
+    if (pose !== 'ko') {
+      drawRect(ctx2d, -18, 18, 36, 4, 'rgba(0,0,0,0.28)');
+    }
+
+    if (pose === 'ko') {
+      drawRect(ctx2d, -18, 4, 28, 12, C.body);
+      drawRect(ctx2d, -12, 0, 22, 8, C.hair);
+      drawRect(ctx2d, 10, 6, 8, 7, C.nose);
+      drawRect(ctx2d, 12, 8, 1, 1, C.nose2);
+      drawRect(ctx2d, 15, 8, 1, 1, C.nose2);
+      // X eyes
+      drawRect(ctx2d, -4, 7, 2, 1, C.white);
+      drawRect(ctx2d, -3, 6, 1, 3, C.white);
+      drawRect(ctx2d, 4, 7, 2, 1, C.white);
+      drawRect(ctx2d, 5, 6, 1, 3, C.white);
+      ctx2d.restore();
+      return;
+    }
+
+    const lean = pose === 'rush' ? 4 : pose === 'hit' ? -4 : 0;
+    const jump = pose === 'jump' ? -12 : 0;
+
+    // Legs
+    drawRect(ctx2d, -14+lean, 7+jump, 4, 13, C.dark);
+    drawRect(ctx2d, -4+lean, 7+jump, 4, 13, C.dark);
+    drawRect(ctx2d, 6+lean, 7+jump, 4, 13, C.dark);
+    drawRect(ctx2d, 14+lean, 7+jump, 4, 13, C.dark);
+    // Hooves
+    drawRect(ctx2d, -14+lean, 19+jump, 4, 2, C.black);
+    drawRect(ctx2d, -4+lean, 19+jump, 4, 2, C.black);
+    drawRect(ctx2d, 6+lean, 19+jump, 4, 2, C.black);
+    drawRect(ctx2d, 14+lean, 19+jump, 4, 2, C.black);
+
+    // Body
+    drawRect(ctx2d, -22+lean, -2+jump, 36, 16, C.body);
+    // Tail tuft
+    drawRect(ctx2d, -25+lean, 3+jump, 4, 3, C.body);
+
+    // Horns
+    drawRect(ctx2d, -10+lean, -16+jump, 4, 8, C.horn);
+    drawRect(ctx2d, 8+lean, -16+jump, 4, 8, C.horn);
+    drawRect(ctx2d, -16+lean, -11+jump, 8, 2, C.horn);
+    drawRect(ctx2d, 8+lean, -11+jump, 8, 2, C.horn);
+
+    // Hair
+    drawRect(ctx2d, -18+lean, -14+jump, 30, 7, C.hair);
+    drawRect(ctx2d, -22+lean, -7+jump, 36, 6, C.hair);
+    drawRect(ctx2d, -24+lean, -1+jump, 38, 5, C.hair2);
+
+    // Eyes
+    drawRect(ctx2d, -11+lean, -3+jump, 4, 3, C.black);
+    drawRect(ctx2d, 3+lean, -3+jump, 4, 3, C.black);
+
+    // Nose
+    drawRect(ctx2d, 14+lean, -1+jump, 10, 8, C.nose);
+    drawRect(ctx2d, 16+lean, 2+jump, 1, 1, C.nose2);
+    drawRect(ctx2d, 21+lean, 2+jump, 1, 1, C.nose2);
+
+    if (pose === 'ranged') {
+      drawRect(ctx2d, 26+lean, 0+jump, 4, 2, C.white);
+    }
+
+    ctx2d.restore();
+  }
+
+  function drawSkater(ctx2d, cx, cy, opts = {}) {
+    const pose = opts.pose || 'idle';
+    const flash = opts.flash || 0;
+    const bob = opts.bob || 0;
+    const spin = opts.spin || 0;
+    ctx2d.save();
+    ctx2d.translate(Math.floor(cx), Math.floor(cy + bob));
+    if (spin) ctx2d.rotate(spin);
+    const fc = flash > 0 ? '#fff' : null;
+    const C = {
+      skin: fc || PALETTE.skin, hair: fc || PALETTE.hair,
+      dress: fc || PALETTE.dress, dress2: fc || PALETTE.dress2,
+      skate: fc || PALETTE.skate, blade: fc || PALETTE.blade,
+      black: fc || PALETTE.black, red: fc || '#D76D87'
+    };
+
+    if (pose !== 'ko') {
+      drawRect(ctx2d, -16, 20, 32, 4, 'rgba(0,0,0,0.28)');
+    }
+
+    if (pose === 'ko') {
+      drawRect(ctx2d, -14, 10, 10, 9, C.skin);
+      drawRect(ctx2d, -15, 8, 12, 4, C.hair);
+      drawRect(ctx2d, -2, 12, 16, 8, C.dress);
+      drawRect(ctx2d, 14, 14, 10, 3, C.skin);
+      drawRect(ctx2d, 22, 14, 5, 2, C.skate);
+      ctx2d.restore();
+      return;
+    }
+
+    const lean = pose === 'rush' ? -4 : pose === 'hit' ? 3 : 0;
+    const jump = pose === 'jump' ? -13 : 0;
+
+    // Hair
+    drawRect(ctx2d, -4+lean, -20+jump, 12, 5, C.hair);
+    drawRect(ctx2d, 7+lean, -18+jump, 5, 3, C.hair);
+
+    // Head
+    drawRect(ctx2d, -2+lean, -15+jump, 10, 11, C.skin);
+
+    // Eyes
+    drawRect(ctx2d, 0+lean, -11+jump, 2, 2, C.black);
+    drawRect(ctx2d, 4+lean, -11+jump, 2, 2, C.black);
+
+    // Smile
+    if (pose !== 'hit') {
+      drawRect(ctx2d, 1+lean, -7+jump, 4, 1, C.red);
+    }
+
+    // Neck
+    drawRect(ctx2d, 1+lean, -4+jump, 4, 2, C.skin);
+
+    // Arms
+    if (pose === 'spin') {
+      drawRect(ctx2d, -14+lean, 0+jump, 10, 2, C.skin);
+      drawRect(ctx2d, 10+lean, -2+jump, 10, 2, C.skin);
+    } else if (pose === 'ranged') {
+      drawRect(ctx2d, -16+lean, 0+jump, 12, 2, C.skin);
+      drawRect(ctx2d, 10+lean, 1+jump, 7, 2, C.skin);
+    } else if (pose === 'jump') {
+      drawRect(ctx2d, -6+lean, -3+jump, 4, 2, C.skin);
+      drawRect(ctx2d, 8+lean, -3+jump, 4, 2, C.skin);
+    } else {
+      drawRect(ctx2d, -10+lean, 0+jump, 8, 2, C.skin);
+      drawRect(ctx2d, 10+lean, 0+jump, 8, 2, C.skin);
+    }
+
+    // Dress
+    drawRect(ctx2d, -2+lean, -1+jump, 10, 9, C.dress);
+    drawRect(ctx2d, -5+lean, 8+jump, 16, 3, C.dress2);
+    drawRect(ctx2d, -7+lean, 11+jump, 20, 2, C.dress2);
+
+    // Legs & skates
+    if (pose === 'kick') {
+      drawRect(ctx2d, -2+lean, 13+jump, 3, 10, C.skin);
+      drawRect(ctx2d, -14+lean, 13+jump, 11, 3, C.skin);
+      drawRect(ctx2d, -17+lean, 13+jump, 4, 2, C.skate);
+      drawRect(ctx2d, 0+lean, 22+jump, 5, 2, C.skate);
+      drawRect(ctx2d, 0+lean, 24+jump, 5, 1, C.blade);
+    } else {
+      drawRect(ctx2d, -1+lean, 13+jump, 3, 10, C.skin);
+      drawRect(ctx2d, 5+lean, 13+jump, 3, 10, C.skin);
+      drawRect(ctx2d, -2+lean, 22+jump, 5, 2, C.skate);
+      drawRect(ctx2d, 4+lean, 22+jump, 5, 2, C.skate);
+      drawRect(ctx2d, -2+lean, 24+jump, 5, 1, C.blade);
+      drawRect(ctx2d, 4+lean, 24+jump, 5, 1, C.blade);
+    }
+
+    ctx2d.restore();
+  }
+
+  function drawBackground(ctx2d) {
+    const s = game.stage;
+    const sky1 = s ? s.sky1 : '#101527';
+    const sky2 = s ? s.sky2 : '#0c1720';
+    const fl = s ? s.fl : PALETTE.floor;
+    const fll = s ? s.fll : PALETTE.floorLine;
+    const bl = s ? s.bl : '#0d1020';
+    const rl = s ? s.rl : '#1f243a';
+    const cA = s ? s.cA : '#2d3148';
+    const cB = s ? s.cB : '#262a3f';
+    const cH = s ? s.cH : '#52608c';
+
+    // Sky
+    ctx2d.fillStyle = sky1;
+    ctx2d.fillRect(0, 0, GW, GH / 2);
+    ctx2d.fillStyle = sky2;
+    ctx2d.fillRect(0, GH / 2, GW, GH / 2);
+
+    // Stage-specific backdrop (behind crowd)
+    if (s && s.bg) s.bg(ctx2d, game.frame);
+
+    // Bleacher area
+    ctx2d.fillStyle = bl;
+    ctx2d.fillRect(0, FLOOR_Y - 18, GW, GH - (FLOOR_Y - 18));
+
+    // Floor
+    ctx2d.fillStyle = fl;
+    ctx2d.fillRect(0, FLOOR_Y, GW, GH - FLOOR_Y);
+
+    ctx2d.fillStyle = fll;
+    for (let x = 0; x < GW; x += 16) ctx2d.fillRect(x, FLOOR_Y, 1, GH - FLOOR_Y);
+    for (let y = FLOOR_Y; y < GH; y += 8) ctx2d.fillRect(0, y, GW, 1);
+
+    // Railing
+    ctx2d.fillStyle = rl;
+    ctx2d.fillRect(0, FLOOR_Y - 18, GW, 2);
+
+    // Crowd silhouettes
+    for (let i = 0; i < game.crowd.length; i++) {
+      const cr = game.crowd[i];
+      const pulse = ((game.frame + cr.blink) % 40 < 20) ? 1 : 0;
+      ctx2d.fillStyle = i % 2 ? cA : cB;
+      ctx2d.fillRect(cr.x, FLOOR_Y - 18 - cr.h, 6, cr.h);
+      if (pulse) {
+        ctx2d.fillStyle = cH;
+        ctx2d.fillRect(cr.x + 2, FLOOR_Y - 20 - cr.h, 2, 2);
+      }
+    }
+
+    // Side color tints
+    ctx2d.fillStyle = 'rgba(255,123,57,0.06)';
+    ctx2d.fillRect(0, 0, GW / 2, GH);
+    ctx2d.fillStyle = 'rgba(17,221,178,0.06)';
+    ctx2d.fillRect(GW / 2, 0, GW / 2, GH);
+  }
+
+  function drawAura(ctx2d, x, y, color, strength) {
+    if (strength <= 0) return;
+    ctx2d.save();
+    ctx2d.globalAlpha = Math.min(0.22, strength * 0.02);
+    ctx2d.fillStyle = color;
+    ctx2d.beginPath();
+    ctx2d.ellipse(x, y - 10, 28 + strength * 2, 40 + strength * 2, 0, 0, Math.PI * 2);
+    ctx2d.fill();
+    ctx2d.restore();
+  }
+
+  function updateEffects() {
+    for (const e of game.effects) {
+      if (e.projectile && e.trail) {
+        pushParticle(e.x, e.y, {
+          type: e.type === 'moo' ? 'spark' : e.type,
+          vx: 0, vy: 0, life: 8, maxLife: 8, size: 1, gravity: 0
+        });
+      }
+      e.x += e.vx;
+      e.y += e.vy;
+      e.vy += e.gravity;
+      e.life -= 1;
+    }
+    game.effects = game.effects.filter(e => e.life > 0);
+
+    for (const d of game.damageTexts) {
+      d.y -= 0.5;
+      d.life -= 1;
+    }
+    game.damageTexts = game.damageTexts.filter(d => d.life > 0);
+  }
+
+  function drawEffects(ctx2d) {
+    for (const e of game.effects) {
+      const alpha = Math.max(0, e.life / e.maxLife);
+      ctx2d.globalAlpha = alpha;
+      let color = '#ffd447';
+      if (e.type === 'dust') color = '#c5a277';
+      else if (e.type === 'ice') color = '#63fff2';
+      else if (e.type === 'shard') color = '#9df6ff';
+      else if (e.type === 'spark') color = '#ff8848';
+      else if (e.type === 'moo') color = '#ffcf68';
+      ctx2d.fillStyle = e.color || color;
+      if (e.type === 'shard') {
+        ctx2d.fillRect(Math.floor(e.x), Math.floor(e.y), e.size + 1, 1);
+        ctx2d.fillRect(Math.floor(e.x) + 1, Math.floor(e.y) - 1, 1, e.size + 1);
+      } else if (e.type === 'moo') {
+        ctx2d.fillRect(Math.floor(e.x) - 2, Math.floor(e.y) - 1, 5, 1);
+        ctx2d.fillRect(Math.floor(e.x) - 2, Math.floor(e.y) + 2, 5, 1);
+        ctx2d.fillRect(Math.floor(e.x) - 2, Math.floor(e.y) - 1, 1, 4);
+        ctx2d.fillRect(Math.floor(e.x) + 2, Math.floor(e.y) - 1, 1, 4);
+      } else {
+        ctx2d.fillRect(Math.floor(e.x), Math.floor(e.y), e.size, e.size);
+      }
+    }
+    ctx2d.globalAlpha = 1;
+
+    // Damage numbers (simple bar indicators)
+    for (const d of game.damageTexts) {
+      const alpha = Math.max(0, d.life / d.maxLife);
+      ctx2d.globalAlpha = alpha;
+      ctx2d.fillStyle = d.damage >= 20 ? '#ffd447' : '#fff2cf';
+      ctx2d.fillRect(Math.floor(d.x), Math.floor(d.y), 10, 2);
+      ctx2d.fillRect(Math.floor(d.x), Math.floor(d.y) + 4, 10, 2);
+    }
+    ctx2d.globalAlpha = 1;
+  }
+
+  // ==================== GAME LOOP ====================
+  function drawGame() {
+    game.frame += 1;
+    updateShake();
+    updateEffects();
+
+    if (game.cow.flash > 0) game.cow.flash -= 1;
+    if (game.skater.flash > 0) game.skater.flash -= 1;
+    game.cow.aura = Math.max(0, game.cow.aura - 0.05);
+    game.skater.aura = Math.max(0, game.skater.aura - 0.05);
+
+    const bobCow = game.cow.pose === 'idle' ? Math.sin(game.frame * 0.08) * 0.8 : 0;
+    const bobSkater = game.skater.pose === 'idle' ? Math.sin(game.frame * 0.08 + 1.1) * 0.8 : 0;
+
+    ctx.save();
+    ctx.translate(Math.floor(game.shake.x), Math.floor(game.shake.y));
+    drawBackground(ctx);
+    drawAura(ctx, game.cow.x, FLOOR_Y + game.cow.y, 'rgba(255,123,57,0.6)', game.cow.aura);
+    drawAura(ctx, game.skater.x, FLOOR_Y + game.skater.y, 'rgba(17,221,178,0.6)', game.skater.aura);
+    drawCow(ctx, game.cow.x, FLOOR_Y + game.cow.y, { pose: game.cow.pose, flash: game.cow.flash, bob: bobCow, spin: game.cow.spin });
+    drawSkater(ctx, game.skater.x, FLOOR_Y + game.skater.y, { pose: game.skater.pose, flash: game.skater.flash, bob: bobSkater, spin: game.skater.spin });
+    drawEffects(ctx);
+    ctx.restore();
+
+    requestAnimationFrame(drawGame);
+  }
+
+  // ==================== BATTLE PLAYBACK ====================
+  async function performAttack(round, token) {
+    const attacker = round.attacker === 'cow' ? game.cow : game.skater;
+    const defender = round.attacker === 'cow' ? game.skater : game.cow;
+    const defenderName = round.attacker === 'cow' ? 'skater' : 'cow';
+    const dir = round.attacker === 'cow' ? 1 : -1;
+
+    roundValue.textContent = String(round.round);
+    attacker.aura = round.isFinisher ? 7 : 4;
+
+    setBattleText(round.move.name, round.attacker === 'cow' ? 'misha-color' : 'maggie-color');
+    const okStart = await wait(420, token);
+    if (!okStart) return false;
+
+    if (round.move.anim === 'rush') {
+      attacker.pose = 'rush';
+      await tween(attacker, 'x', defender.x - dir * 34, 220, token);
+      if (token !== battleToken) return false;
+      playSound(round.isFinisher ? 'heavy-hit' : 'hit');
+      defender.flash = 10;
+      defender.pose = 'hit';
+      addBurst(defender.x, FLOOR_Y - 10, round.move.particles, round.isFinisher ? 14 : 8, dir);
+      addDamageText(defender.x - 5, FLOOR_Y - 34, round.damage);
+      addShake(round.isFinisher ? 12 : 6);
+      defender.hp = Math.max(0, defender.hp - round.damage);
+      updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
+      (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      await tween(defender, 'x', defender.baseX + dir * 14, 100, token, 'in');
+      await wait(60, token);
+      await Promise.all([
+        tween(attacker, 'x', attacker.baseX, 260, token),
+        tween(defender, 'x', defender.baseX, 240, token)
+      ]);
+    } else if (round.move.anim === 'jump') {
+      attacker.pose = 'jump';
+      await Promise.all([
+        tween(attacker, 'y', -18, 170, token),
+        tween(attacker, 'x', defender.x - dir * 28, 220, token)
+      ]);
+      if (token !== battleToken) return false;
+      await tween(attacker, 'y', 0, 130, token, 'in');
+      playSound(round.isFinisher ? 'heavy-hit' : 'hit');
+      defender.flash = 12;
+      defender.pose = 'hit';
+      addBurst(defender.x, FLOOR_Y - 8, round.move.particles, round.isFinisher ? 16 : 10, dir);
+      addDamageText(defender.x - 5, FLOOR_Y - 34, round.damage);
+      addShake(round.isFinisher ? 13 : 7);
+      defender.hp = Math.max(0, defender.hp - round.damage);
+      updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
+      (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      await tween(defender, 'x', defender.baseX + dir * 16, 120, token, 'in');
+      await wait(60, token);
+      await Promise.all([
+        tween(attacker, 'x', attacker.baseX, 280, token),
+        tween(defender, 'x', defender.baseX, 240, token)
+      ]);
+    } else if (round.move.anim === 'spin') {
+      attacker.pose = round.attacker === 'skater' ? 'spin' : 'rush';
+      const spins = 4;
+      const startSpin = attacker.spin;
+      const spinTarget = startSpin + Math.PI * spins;
+      const spinPromise = new Promise(resolve => {
+        const t0 = performance.now();
+        function spinFrame(now) {
+          if (token !== battleToken) return resolve(false);
+          const t = Math.min((now - t0) / 380, 1);
+          attacker.spin = startSpin + (spinTarget - startSpin) * t;
+          if (t < 1) requestAnimationFrame(spinFrame);
+          else { attacker.spin = 0; resolve(true); }
+        }
+        requestAnimationFrame(spinFrame);
+      });
+      await Promise.all([
+        tween(attacker, 'x', (attacker.baseX + defender.baseX) / 2, 220, token),
+        spinPromise
+      ]);
+      if (token !== battleToken) return false;
+      playSound(round.isFinisher ? 'heavy-hit' : 'hit');
+      defender.flash = 10;
+      defender.pose = 'hit';
+      addBurst(defender.x, FLOOR_Y - 12, round.move.particles, round.isFinisher ? 14 : 8, dir);
+      addDamageText(defender.x - 5, FLOOR_Y - 34, round.damage);
+      addShake(round.isFinisher ? 11 : 5);
+      defender.hp = Math.max(0, defender.hp - round.damage);
+      updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
+      (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      await Promise.all([
+        tween(attacker, 'x', attacker.baseX, 260, token),
+        tween(defender, 'x', defender.baseX + dir * 12, 120, token, 'in')
+      ]);
+      await tween(defender, 'x', defender.baseX, 180, token);
+    } else if (round.move.anim === 'ranged') {
+      attacker.pose = 'ranged';
+      await wait(180, token);
+      playSound('projectile');
+      addProjectile(attacker.x + dir * 14, FLOOR_Y - 14, defender.x, round.move.particles);
+      await wait(280, token);
+      if (token !== battleToken) return false;
+      defender.flash = 9;
+      defender.pose = 'hit';
+      addBurst(defender.x, FLOOR_Y - 14, round.move.particles === 'moo' ? 'impact' : round.move.particles, round.isFinisher ? 12 : 7, dir);
+      addDamageText(defender.x - 5, FLOOR_Y - 34, round.damage);
+      addShake(round.isFinisher ? 10 : 4);
+      defender.hp = Math.max(0, defender.hp - round.damage);
+      updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
+      (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      await tween(defender, 'x', defender.baseX + dir * 10, 100, token, 'in');
+      await tween(defender, 'x', defender.baseX, 180, token);
+    }
+
+    clearBattleText();
+    attacker.pose = 'idle';
+    if (defender.hp > 0) defender.pose = 'idle';
+    return wait(180, token);
+  }
+
+  async function fadeToScoreboard(token) {
+    overlay.classList.add('fade-out');
+    mainContent.classList.add('visible');
+    replayBtn.classList.add('visible');
+    await wait(650, token);
+    if (token !== battleToken) return false;
+    overlay.classList.add('hidden');
+    return true;
+  }
+
+  async function runBattle() {
+    battleToken += 1;
+    const token = battleToken;
+    runningBattle = true;
+
+    resetUi();
+    resetGame();
+    updateScoreboard();
+    overlay.classList.remove('hidden', 'fade-out');
+    overlay.style.display = 'flex';
+    mainContent.classList.remove('visible');
+    replayBtn.classList.remove('visible');
+
+    const state = getBattleDayState();
+    const rounds = generateBattle(state.dayNumber, state.isMisha);
+
+    // Select stage deterministically per day
+    const stageRng = mulberry32(state.dayNumber * 3571 + 53);
+    game.stage = STAGES[Math.floor(stageRng() * STAGES.length)];
+
+    await wait(220, token);
+    if (token !== battleToken) return;
+
+    if (!(await showTransientText("TONIGHT'S BATTLE", 'white', 950, token))) return;
+    if (!(await showTransientText(game.stage.name, 'white', 800, token))) return;
+    await wait(120, token);
+
+    // Characters enter
+    addBurst(22, FLOOR_Y - 6, 'dust', 8, 1);
+    await tween(game.cow, 'x', COW_HOME, 520, token);
+    addBurst(GW - 20, FLOOR_Y - 6, 'ice', 8, -1);
+    await tween(game.skater, 'x', SKATER_HOME, 520, token);
+
+    hbRow.classList.add('visible');
+    await wait(260, token);
+    playSound('ready');
+    if (!(await showTransientText('READY?', 'white', 700, token))) return;
+    playSound('fight');
+    if (!(await showTransientText('FIGHT!', 'white', 650, token))) return;
+
+    // Battle rounds
+    for (const round of rounds) {
+      if (token !== battleToken) return;
+      if (round.isFinisher) {
+        if (!(await showTransientText('FINAL BLOW!', 'white', 700, token))) return;
+      }
+      const ok = await performAttack(round, token);
+      if (!ok || token !== battleToken) return;
+      const defender = round.attacker === 'cow' ? game.skater : game.cow;
+      if (defender.hp <= 0) {
+        defender.pose = 'ko';
+        addBurst(defender.x, FLOOR_Y - 12, 'impact', 18, round.attacker === 'cow' ? 1 : -1);
+        addShake(14);
+        break;
+      }
+    }
+
+    // KO
+    playSound('ko');
+    setBattleText('K.O.!', 'ko');
+    addShake(8);
+    await wait(1200, token);
+    if (token !== battleToken) return;
+    clearBattleText();
+
+    // Winner reveal
+    game.winner = state.isMisha ? 'cow' : 'skater';
+    wbName.textContent = state.isMisha ? 'MISHA!' : 'MAGGIE!';
+    wbName.className = 'wb-name ' + (state.isMisha ? 'for-misha' : 'for-maggie');
+    winnerBox.classList.add('visible');
+    playSound(state.isMisha ? 'win-misha' : 'win-maggie');
+
+    const winner = state.isMisha ? game.cow : game.skater;
+    winner.aura = 10;
+    for (let i = 0; i < 3; i++) {
+      await tween(winner, 'y', -7, 110, token);
+      await tween(winner, 'y', 0, 110, token, 'in');
+      if (token !== battleToken) return;
+    }
+
+    await wait(1600, token);
+    if (token !== battleToken) return;
+    await fadeToScoreboard(token);
+    runningBattle = false;
+  }
+
+  async function showTransientText(text, cls, ms, token) {
+    setBattleText(text, cls);
+    const ok = await wait(ms, token);
+    if (!ok) return false;
+    clearBattleText();
+    return true;
+  }
+
+  // ==================== SCOREBOARD ====================
+  function drawPortraits() {
+    const cowPortrait = document.getElementById('cowPortrait');
+    const cctx = cowPortrait.getContext('2d');
+    cctx.clearRect(0, 0, cowPortrait.width, cowPortrait.height);
+    drawCow(cctx, 24, 26, { pose: 'idle' });
+
+    const skaterPortrait = document.getElementById('skaterPortrait');
+    const sctx = skaterPortrait.getContext('2d');
+    sctx.clearRect(0, 0, skaterPortrait.width, skaterPortrait.height);
+    drawSkater(sctx, 24, 27, { pose: 'idle' });
+  }
+
+  function updateScoreboard() {
+    const state = getBattleDayState();
+    const mishaCard = document.getElementById('mishaCard');
+    const maggieCard = document.getElementById('maggieCard');
+    mishaCard.classList.toggle('winner', state.isMisha);
+    mishaCard.classList.toggle('loser', !state.isMisha);
+    maggieCard.classList.toggle('winner', !state.isMisha);
+    maggieCard.classList.toggle('loser', state.isMisha);
+
+    document.getElementById('mishaStatus').textContent = state.isMisha ? 'BIG BATHROOM TONIGHT!' : 'small bathroom...';
+    document.getElementById('maggieStatus').textContent = state.isMisha ? 'small bathroom...' : 'BIG BATHROOM TONIGHT!';
+    document.getElementById('mishaAge').textContent = ageOn(MISHA_BORN, state.today);
+    document.getElementById('maggieAge').textContent = ageOn(MAGGIE_BORN, state.today);
+    document.getElementById('dayNum').textContent = state.dayNumber;
+    document.getElementById('dateInfo').textContent = formatLongVancouverDate() + ' | ' + dateKey(state.today) + ' in ' + TZ;
+  }
+
+  // ==================== MIDNIGHT SCHEDULING ====================
+  function msUntilNextVancouverMidnight() {
+    const now = new Date();
+    // Use Intl to get the actual current time in Vancouver, DST-aware
+    const vanStr = now.toLocaleString('en-US', { timeZone: TZ });
+    const vanNow = new Date(vanStr);
+    const midnight = new Date(vanNow);
+    midnight.setHours(24, 0, 0, 0);
+    return Math.max(1000, midnight - vanNow);
+  }
+
+  function scheduleMidnightBattle() {
+    if (midnightTimer) clearTimeout(midnightTimer);
+    midnightTimer = setTimeout(async () => {
+      updateScoreboard();
+      drawPortraits();
+      await runBattle();
+      scheduleMidnightBattle();
+    }, msUntilNextVancouverMidnight());
+  }
+
+  // ==================== INIT ====================
+  function resizeCanvas() {
+    canvas.width = GW;
+    canvas.height = GH;
+  }
+
+  replayBtn.addEventListener('click', () => {
+    ensureAudio();
+    playSound('replay');
+    if (!runningBattle) runBattle();
+  });
+
+  document.getElementById('soundBtn').addEventListener('click', (e) => {
+    soundEnabled = !soundEnabled;
+    const btn = e.currentTarget;
+    btn.textContent = soundEnabled ? '\uD83D\uDD0A SOUND ON' : '\uD83D\uDD07 SOUND OFF';
+    if (soundEnabled) {
+      ensureAudio();
+      playSound('replay');
+    }
+  });
+
+  resizeCanvas();
+  drawPortraits();
+  updateScoreboard();
+  requestAnimationFrame(drawGame);
+
+  document.fonts.ready.then(() => {
+    setTimeout(() => runBattle(), 180);
+  });
+
+  window.addEventListener('pointerdown', () => ensureAudio(), { once: true });
+  window.addEventListener('keydown', () => ensureAudio(), { once: true });
+
+  scheduleMidnightBattle();
+})();
+</script>
+</body>
+</html>
