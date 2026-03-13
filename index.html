@@ -2029,18 +2029,46 @@
     drawSplashPortraits();
   }
 
+  // === iOS audio unlock: two strategies ===
+
+  // 1. Modern (iOS 17+): navigator.audioSession API
+  function configureIOSAudioMode() {
+    try {
+      if (navigator.audioSession && typeof navigator.audioSession.type === 'string') {
+        navigator.audioSession.type = 'playback';
+        return true;
+      }
+    } catch(e) {}
+    return false;
+  }
+
+  // 2. Fallback (older iOS): silent <audio> element forces "playback" session
+  const SILENT_MP3 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAABhkVKaQYAAAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAABhkVKaQYAAAAAAAAAAAAAAAAA';
+  let iosAudioUnlocked = false;
+
+  function unlockIOSAudioFallback() {
+    if (iosAudioUnlocked) return;
+    iosAudioUnlocked = true;
+    try {
+      const audio = new Audio(SILENT_MP3);
+      audio.setAttribute('playsinline', '');
+      audio.volume = 0.01;
+      const p = audio.play();
+      if (p) p.then(() => { audio.pause(); audio.remove(); }).catch(() => {});
+    } catch(e) {}
+  }
+
   function startFromSplash() {
     const splash = document.getElementById('splash');
-    // iOS Safari: AudioContext MUST be created + first sound played
-    // synchronously inside the gesture handler — no async/await before this
+    // Try modern API first, fall back to silent audio trick
+    if (!configureIOSAudioMode()) unlockIOSAudioFallback();
+    // Create and unlock Web Audio context synchronously in gesture
     if (!audioCtx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (AC) audioCtx = new AC();
     }
     if (audioCtx) {
-      // Synchronous resume (returns promise but iOS unlocks immediately)
       audioCtx.resume();
-      // Play a silent buffer to fully unlock iOS audio pipeline
       try {
         const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
         const src = audioCtx.createBufferSource();
