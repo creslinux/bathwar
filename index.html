@@ -741,7 +741,7 @@
 
   const PALETTE = {
     cream: '#F5E6C8', horn: '#D8C39B', cowHair: '#D08A4E', cowHair2: '#B86F38', cowBody: '#8B5B38', cowDark: '#5C371C', cowNose: '#F0B6B8', cowNose2: '#C98082',
-    skin: '#F7D6B4', hair: '#3D2947', dress: '#7B68EE', dress2: '#B06BFF', skate: '#C9D6DE', blade: '#7A8898', black: '#111', white: '#fff',
+    skin: '#F7D6B4', hair: '#C0321A', dress: '#7B68EE', dress2: '#B06BFF', skate: '#C9D6DE', blade: '#7A8898', black: '#111', white: '#fff',
     bg: '#090912', floor: '#171a2a', floorLine: '#262c41'
   };
 
@@ -2029,22 +2029,29 @@
     drawSplashPortraits();
   }
 
-  async function startFromSplash() {
+  function startFromSplash() {
     const splash = document.getElementById('splash');
-    // iOS Safari requires AudioContext created + resumed in a direct gesture
-    const ac = ensureAudio();
-    if (ac && ac.state === 'suspended') await ac.resume();
-    // Play a silent buffer to fully unlock audio on iOS
-    if (ac) {
+    // iOS Safari: AudioContext MUST be created + first sound played
+    // synchronously inside the gesture handler — no async/await before this
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    if (audioCtx) {
+      // Synchronous resume (returns promise but iOS unlocks immediately)
+      audioCtx.resume();
+      // Play a silent buffer to fully unlock iOS audio pipeline
       try {
-        const buf = ac.createBuffer(1, 1, ac.sampleRate);
-        const src = ac.createBufferSource();
+        const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+        const src = audioCtx.createBufferSource();
         src.buffer = buf;
-        src.connect(ac.destination);
-        src.start();
+        src.connect(audioCtx.destination);
+        src.start(0);
       } catch(e) {}
     }
+    // First real sound — still synchronous in the gesture
     playSound('fight');
+    // Now fade out splash and start battle
     splash.style.opacity = '0';
     setTimeout(() => {
       splash.classList.add('hidden');
@@ -2053,7 +2060,10 @@
     }, 400);
   }
 
-  document.getElementById('splash').addEventListener('click', () => {
+  document.getElementById('splash').addEventListener('click', startFromSplash, { once: true });
+  document.getElementById('splash').addEventListener('touchend', function(e) {
+    e.preventDefault(); // prevent ghost click
+    this.removeEventListener('click', startFromSplash);
     startFromSplash();
   }, { once: true });
 
