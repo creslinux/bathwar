@@ -572,15 +572,43 @@
   }
 
   .splash-tap {
-    font-size: clamp(0.38rem, 1.2vw, 0.58rem);
-    color: #7a7e94;
-    letter-spacing: 0.2em;
-    animation: tap-pulse 1.8s ease-in-out infinite;
+    display: inline-block;
+    font-size: clamp(0.55rem, 1.8vw, 0.85rem);
+    color: #fff;
+    letter-spacing: 0.18em;
+    padding: 0.9em 2.2em;
+    background: linear-gradient(180deg, #ff7b39 0%, #cc4a10 100%);
+    border: 3px solid #ffb347;
+    box-shadow:
+      0 0 20px rgba(255,123,57,0.35),
+      0 4px 0 #8a2e00,
+      inset 0 1px 0 rgba(255,255,255,0.2);
+    cursor: pointer;
+    position: relative;
+    top: 0;
+    transition: top 0.08s ease, box-shadow 0.08s ease;
+    animation: btn-glow 2s ease-in-out infinite;
   }
 
-  @keyframes tap-pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
+  .splash-tap:hover {
+    top: 2px;
+    box-shadow:
+      0 0 30px rgba(255,123,57,0.5),
+      0 2px 0 #8a2e00,
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+
+  .splash-tap:active {
+    top: 4px;
+    box-shadow:
+      0 0 16px rgba(255,123,57,0.4),
+      0 0 0 #8a2e00,
+      inset 0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  @keyframes btn-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,123,57,0.35), 0 4px 0 #8a2e00, inset 0 1px 0 rgba(255,255,255,0.2); }
+    50% { box-shadow: 0 0 36px rgba(255,123,57,0.55), 0 4px 0 #8a2e00, inset 0 1px 0 rgba(255,255,255,0.2); }
   }
 
   .splash-day {
@@ -654,7 +682,7 @@
       <div class="splash-fname">MAGGIE</div>
     </div>
   </div>
-  <div class="splash-tap">TAP TO START</div>
+  <div class="splash-tap">&#9654; START BATTLE</div>
   <div class="splash-day" id="splashDay"></div>
 </div>
 
