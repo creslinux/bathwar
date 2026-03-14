@@ -188,6 +188,26 @@
     text-shadow: 4px 4px 0 #8f6500, -2px -2px 0 #000, 0 0 24px rgba(255,212,71,0.25);
   }
 
+  .commentary-text {
+    position: absolute;
+    top: calc(50% + clamp(1.8rem, 5vw, 3.4rem));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 19;
+    opacity: 0;
+    white-space: nowrap;
+    text-align: center;
+    transition: opacity 0.2s ease;
+    font-family: 'Bangers', cursive;
+    font-size: clamp(0.55rem, 2.2vw, 1.3rem);
+    color: var(--gold);
+    text-shadow: 2px 2px 0 #000, 0 0 12px rgba(0,0,0,0.4);
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+
+  .commentary-text.visible { opacity: 1; }
+
   .winner-box {
     position: absolute;
     left: 50%;
@@ -706,6 +726,7 @@
       </div>
     </div>
     <div class="battle-text" id="battleText"></div>
+    <div class="commentary-text" id="commentaryText"></div>
     <div class="winner-box" id="winnerBox">
       <div class="wb-sub">BIG BATHROOM GOES TO</div>
       <div class="wb-name" id="wbName"></div>
@@ -785,6 +806,7 @@
   const winnerBox = document.getElementById('winnerBox');
   const wbName = document.getElementById('wbName');
   const roundValue = document.getElementById('roundValue');
+  const commentaryText = document.getElementById('commentaryText');
 
   const canvas = document.getElementById('battleCanvas');
   const ctx = canvas.getContext('2d', { alpha: false });
@@ -867,6 +889,8 @@
   function resetUi() {
     battleText.className = 'battle-text';
     battleText.textContent = '';
+    commentaryText.className = 'commentary-text';
+    commentaryText.textContent = '';
     hbRow.classList.remove('visible');
     winnerBox.classList.remove('visible');
     roundValue.textContent = '1';
@@ -1132,6 +1156,140 @@
     { name: 'PIROUETTE!', anim: 'spin', particles: 'ice' },
     { name: 'QUAD LUTZ!', anim: 'jump', particles: 'ice', finisher: true }
   ];
+
+  // ==================== COMMENTARY ====================
+  const COMMENTARY = {
+    moves: {
+      'HEADBUTT!': [
+        "Misha charges with the fury of a thousand highlands!",
+        "That noggin is a WEAPON!",
+        "Hair in the eyes? Doesn't matter!",
+        "Skull meets skull! Classic highland move!",
+        "She can't see but she doesn't NEED to!"
+      ],
+      'HOOF STOMP!': [
+        "FOUR hooves of FURY!",
+        "The ground trembles beneath those hooves!",
+        "That's gonna crack the bathroom tiles!",
+        "Stomp so hard the shampoo bottles fell over!",
+        "Those are some ANGRY hooves!"
+      ],
+      'TAIL WHIP!': [
+        "The fluffy tail of DOOM!",
+        "Don't let the fluffiness fool you!",
+        "Misha spins like a hairy helicopter!",
+        "That tail has been training in SECRET!",
+        "A tail so powerful it has its own zip code!"
+      ],
+      'MOO BLAST!': [
+        "A sonic MOO heard across Vancouver!",
+        "That moo registered on the Richter scale!",
+        "MOOOOO! The neighbours are NOT happy!",
+        "A blast of pure highland fury!",
+        "Even the crows outside flinched!"
+      ],
+      'HORN TOSS!': [
+        "Those horns mean BUSINESS!",
+        "Tossed like a pancake on Sunday morning!",
+        "Highland horns \u2014 nature's catapult!",
+        "A toss that would make a bull jealous!",
+        "Up, up, and OUCH!"
+      ],
+      'HIGHLAND CHARGE!': [
+        "THE FULL HIGHLAND EXPERIENCE!",
+        "Hair flowing, hooves thundering \u2014 UNSTOPPABLE!",
+        "This is what PEAK COW looks like!",
+        "A seven-year-old's ULTIMATE POWER!",
+        "She's been saving this one ALL DAY!"
+      ],
+      'SPIN KICK!': [
+        "Grace meets VIOLENCE!",
+        "10 out of 10 from all the judges!",
+        "That's not in any skating textbook!",
+        "Maggie puts the KICK in figure skating!",
+        "Elegant AND devastating!"
+      ],
+      'ICE SHARD!': [
+        "Frozen fury from across the arena!",
+        "That shard was SHARP!",
+        "Ice cold \u2014 just like Maggie's game face!",
+        "Straight from the Zamboni of DOOM!",
+        "A shard so cold it froze the crowd!"
+      ],
+      'TRIPLE AXEL!': [
+        "A devastating triple axel!",
+        "Three rotations of PURE PAIN!",
+        "The judges are speechless!",
+        "That axel had some SERIOUS altitude!",
+        "Even the Olympic judges gave it a 10!"
+      ],
+      'SKATE SLASH!': [
+        "Those blades aren't just for ice!",
+        "A slash sharper than a piano key!",
+        "Skates of STEEL!",
+        "That's one way to use figure skates!",
+        "Maggie slides in with surgical precision!"
+      ],
+      'PIROUETTE!': [
+        "A pirouette of DESTRUCTION!",
+        "Spinning so fast she's a BLUR!",
+        "Pretty? Yes. Painful? ALSO yes!",
+        "The most dangerous ballet move EVER!",
+        "Around and around and BONK!"
+      ],
+      'QUAD LUTZ!': [
+        "FOUR ROTATIONS OF ABSOLUTE DOOM!",
+        "This is what ten years of training looks like!",
+        "The quad lutz \u2014 skating's nuclear option!",
+        "She's been practising this at the rink ALL WEEK!",
+        "A ten-year-old's ULTIMATE POWER!"
+      ]
+    },
+    bigHit: [
+      "DEVASTATING!", "That's gonna leave a MARK!",
+      "ABSOLUTELY BRUTAL!", "OH THE HUMANITY!",
+      "Someone call a medic!", "WHAT A HIT!",
+      "The crowd GASPS!", "UNBELIEVABLE POWER!"
+    ],
+    crowd: [
+      "The crowd goes WILD!",
+      "The bathroom tiles are SHAKING!",
+      "You can hear the gasps from the living room!",
+      "Mom and Dad are watching from the doorway!",
+      "The rubber ducks are QUAKING with fear!",
+      "Even the toothbrushes are cheering!",
+      "The toilet seat just slammed itself shut!",
+      "The shampoo bottles are taking cover!",
+      "The towels are waving themselves!"
+    ],
+    finisher: [
+      "This is it... THE FINAL BLOW!",
+      "One last chance to claim the throne!",
+      "The bathroom hangs in the BALANCE!",
+      "Everything comes down to THIS!",
+      "No more practice rounds \u2014 THIS IS IT!"
+    ],
+    ko: [
+      "And it's OVER!", "Down for the COUNT!",
+      "THE BATHROOM HAS BEEN DECIDED!",
+      "That's ALL she wrote!",
+      "GOODNIGHT!"
+    ]
+  };
+
+  function setCommentary(text) {
+    commentaryText.textContent = text;
+    commentaryText.className = 'commentary-text visible';
+  }
+
+  function clearCommentary() {
+    commentaryText.className = 'commentary-text';
+    commentaryText.textContent = '';
+  }
+
+  function pickLine(pool, rng) {
+    return pool[Math.floor(rng() * pool.length)];
+  }
 
   // ==================== STAGES ====================
   const STAGES = [
@@ -1744,7 +1902,7 @@
   }
 
   // ==================== BATTLE PLAYBACK ====================
-  async function performAttack(round, token) {
+  async function performAttack(round, token, cRng) {
     const attacker = round.attacker === 'cow' ? game.cow : game.skater;
     const defender = round.attacker === 'cow' ? game.skater : game.cow;
     const defenderName = round.attacker === 'cow' ? 'skater' : 'cow';
@@ -1754,6 +1912,8 @@
     attacker.aura = round.isFinisher ? 7 : 4;
 
     setBattleText(round.move.name, round.attacker === 'cow' ? 'misha-color' : 'maggie-color');
+    const moveLines = COMMENTARY.moves[round.move.name];
+    if (moveLines && cRng) setCommentary(pickLine(moveLines, cRng));
     const okStart = await wait(420, token);
     if (!okStart) return false;
 
@@ -1770,6 +1930,7 @@
       defender.hp = Math.max(0, defender.hp - round.damage);
       updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
       (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      if (round.damage >= 20 && cRng) setCommentary(pickLine(COMMENTARY.bigHit, cRng));
       await tween(defender, 'x', defender.baseX + dir * 14, 100, token, 'in');
       await wait(60, token);
       await Promise.all([
@@ -1793,6 +1954,7 @@
       defender.hp = Math.max(0, defender.hp - round.damage);
       updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
       (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      if (round.damage >= 20 && cRng) setCommentary(pickLine(COMMENTARY.bigHit, cRng));
       await tween(defender, 'x', defender.baseX + dir * 16, 120, token, 'in');
       await wait(60, token);
       await Promise.all([
@@ -1829,6 +1991,7 @@
       defender.hp = Math.max(0, defender.hp - round.damage);
       updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
       (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      if (round.damage >= 20 && cRng) setCommentary(pickLine(COMMENTARY.bigHit, cRng));
       await Promise.all([
         tween(attacker, 'x', attacker.baseX, 260, token),
         tween(defender, 'x', defender.baseX + dir * 12, 120, token, 'in')
@@ -1849,11 +2012,13 @@
       defender.hp = Math.max(0, defender.hp - round.damage);
       updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
       (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      if (round.damage >= 20 && cRng) setCommentary(pickLine(COMMENTARY.bigHit, cRng));
       await tween(defender, 'x', defender.baseX + dir * 10, 100, token, 'in');
       await tween(defender, 'x', defender.baseX, 180, token);
     }
 
     clearBattleText();
+    clearCommentary();
     attacker.pose = 'idle';
     if (defender.hp > 0) defender.pose = 'idle';
     return wait(180, token);
@@ -1887,6 +2052,7 @@
 
     // Select stage deterministically per day
     const stageRng = mulberry32(state.dayNumber * 3571 + 53);
+    const commentaryRng = mulberry32(state.dayNumber * 4391 + 271);
     game.stage = STAGES[Math.floor(stageRng() * STAGES.length)];
 
     await wait(220, token);
@@ -1913,9 +2079,12 @@
     for (const round of rounds) {
       if (token !== battleToken) return;
       if (round.isFinisher) {
-        if (!(await showTransientText('FINAL BLOW!', 'white', 700, token))) return;
+        setBattleText('FINAL BLOW!', 'white');
+        setCommentary(pickLine(COMMENTARY.finisher, commentaryRng));
+        if (!(await wait(700, token))) return;
+        clearBattleText(); clearCommentary();
       }
-      const ok = await performAttack(round, token);
+      const ok = await performAttack(round, token, commentaryRng);
       if (!ok || token !== battleToken) return;
       const defender = round.attacker === 'cow' ? game.skater : game.cow;
       if (defender.hp <= 0) {
@@ -1924,15 +2093,24 @@
         addShake(14);
         break;
       }
+      // ~30% chance of crowd commentary between rounds
+      if (!round.isFinisher && commentaryRng() < 0.3) {
+        setCommentary(pickLine(COMMENTARY.crowd, commentaryRng));
+        await wait(500, token);
+        if (token !== battleToken) return;
+        clearCommentary();
+      }
     }
 
     // KO
     playSound('ko');
     setBattleText('K.O.!', 'ko');
+    setCommentary(pickLine(COMMENTARY.ko, commentaryRng));
     addShake(8);
     await wait(1200, token);
     if (token !== battleToken) return;
     clearBattleText();
+    clearCommentary();
 
     // Winner reveal
     game.winner = state.isMisha ? 'cow' : 'skater';
