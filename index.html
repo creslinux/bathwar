@@ -826,7 +826,8 @@
     damageTexts: [],
     shake: { x: 0, y: 0, intensity: 0 },
     crowd: [],
-    winner: null
+    winner: null,
+    comedy: null
   };
 
   function mulberry32(a) {
@@ -911,6 +912,7 @@
     game.shake = { x: 0, y: 0, intensity: 0 };
     game.winner = null;
     game.stage = null;
+    game.comedy = null;
     const rng = mulberry32(12345);
     game.crowd = Array.from({ length: 30 }, (_, i) => ({
       x: 8 + i * 10,
@@ -1019,6 +1021,22 @@
       case 'replay':
         tone(440, 0.05, 'square', 0.025, 0);
         tone(660, 0.08, 'square', 0.025, 0.07);
+        break;
+      case 'anvil':
+        tone(200, 0.1, 'triangle', 0.02, 0);
+        tone(150, 0.15, 'triangle', 0.025, 0.1);
+        tone(80, 0.2, 'triangle', 0.04, 0.25);
+        noiseBurst(0.15, 0.03, 0.3);
+        break;
+      case 'bomb':
+        tone(800, 0.08, 'sawtooth', 0.02, 0);
+        tone(400, 0.12, 'sawtooth', 0.025, 0.1);
+        tone(100, 0.25, 'triangle', 0.04, 0.22);
+        noiseBurst(0.18, 0.03, 0.28);
+        break;
+      case 'squeak':
+        tone(1200, 0.06, 'square', 0.02, 0);
+        tone(900, 0.08, 'square', 0.02, 0.06);
         break;
     }
   }
@@ -1145,7 +1163,13 @@
     { name: 'TAIL WHIP!', anim: 'spin', particles: 'dust' },
     { name: 'MOO BLAST!', anim: 'ranged', particles: 'moo' },
     { name: 'HORN TOSS!', anim: 'rush', particles: 'spark' },
-    { name: 'HIGHLAND CHARGE!', anim: 'rush', particles: 'impact', finisher: true }
+    { name: 'COW PATTY TOSS!', anim: 'ranged', particles: 'moo' },
+    { name: 'UDDER CHAOS!', anim: 'spin', particles: 'spark' },
+    { name: 'ANVIL DROP!', anim: 'anvil', particles: 'impact', gag: 'anvil' },
+    { name: 'BOMB SNEEZE!', anim: 'bomb', particles: 'spark', gag: 'bomb' },
+    { name: 'PIANO CRASH!', anim: 'anvil', particles: 'impact', gag: 'piano' },
+    { name: 'HIGHLAND CHARGE!', anim: 'rush', particles: 'impact', finisher: true },
+    { name: 'MEGA MOO BLAST!', anim: 'anvil', particles: 'moo', gag: 'safe', finisher: true }
   ];
 
   const SKATER_MOVES = [
@@ -1154,7 +1178,13 @@
     { name: 'TRIPLE AXEL!', anim: 'jump', particles: 'ice' },
     { name: 'SKATE SLASH!', anim: 'rush', particles: 'impact' },
     { name: 'PIROUETTE!', anim: 'spin', particles: 'ice' },
-    { name: 'QUAD LUTZ!', anim: 'jump', particles: 'ice', finisher: true }
+    { name: 'HAIR DRYER BLAST!', anim: 'ranged', particles: 'shard' },
+    { name: 'SOAP SLICK!', anim: 'bomb', particles: 'ice', gag: 'bathbomb' },
+    { name: 'BATH BOMB!', anim: 'bomb', particles: 'ice', gag: 'bathbomb' },
+    { name: 'PIANO DROP!', anim: 'anvil', particles: 'ice', gag: 'piano' },
+    { name: 'DYNAMITE SPIN!', anim: 'bomb', particles: 'spark', gag: 'dynamite' },
+    { name: 'QUAD LUTZ!', anim: 'jump', particles: 'ice', finisher: true },
+    { name: 'DEATH SPIRAL!', anim: 'spin', particles: 'ice', finisher: true }
   ];
 
   // ==================== COMMENTARY ====================
@@ -1243,13 +1273,101 @@
         "The quad lutz \u2014 skating's nuclear option!",
         "She's been practising this at the rink ALL WEEK!",
         "A ten-year-old's ULTIMATE POWER!"
+      ],
+      'COW PATTY TOSS!': [
+        "When nature calls... it HURTS!",
+        "The smell of VICTORY!",
+        "Organic weaponry at its FINEST!",
+        "Misha's been saving that one up!",
+        "That's gonna stain the ceiling!"
+      ],
+      'UDDER CHAOS!': [
+        "Udder CHAOS! Two words that spell TROUBLE!",
+        "The udder is mightier than the sword!",
+        "Milk shake? More like EARTHQUAKE!",
+        "Chaos mode: ACTIVATED!",
+        "That udder has some SERIOUS hang time!"
+      ],
+      'ANVIL DROP!': [
+        "An anvil?! Where did that come from?!",
+        "Classic cartoon justice!",
+        "That anvil has been waiting PATIENTLY!",
+        "The oldest trick in the book!",
+        "ACME would be PROUD!"
+      ],
+      'BOMB SNEEZE!': [
+        "AACHOO \u2014 KABOOM!",
+        "Allergies can be DEADLY!",
+        "That sneeze packed some HEAT!",
+        "Bless you... and RUN!",
+        "Hay fever? More like HAY FURY!"
+      ],
+      'PIANO CRASH!': [
+        "Chopin would NOT approve!",
+        "A grand piano for a grand occasion!",
+        "That's one way to drop a beat!",
+        "The keys went EVERYWHERE!",
+        "And the crowd goes... silent. Then WILD!"
+      ],
+      'MEGA MOO BLAST!': [
+        "THE ULTIMATE MOO!",
+        "This moo could level a BUILDING!",
+        "Every cow in British Columbia just PERKED UP!",
+        "MOOOOOOOOOOO!",
+        "The mother of all moos!"
+      ],
+      'HAIR DRYER BLAST!': [
+        "Maximum wind speed ACHIEVED!",
+        "Bad hair day? Make it WORSE!",
+        "That dryer is set to DESTROY!",
+        "A gale-force blowout!",
+        "Maggie's hair care routine is AGGRESSIVE!"
+      ],
+      'SOAP SLICK!': [
+        "Soap in the eyes! CLASSIC!",
+        "Slippery when wet \u2014 ESPECIALLY painful!",
+        "That's going to sting!",
+        "Squeaky clean and ABSOLUTELY furious!",
+        "The soap of DOOM!"
+      ],
+      'BATH BOMB!': [
+        "A bath bomb of PURE DESTRUCTION!",
+        "Fizzy, sparkly, and PAINFUL!",
+        "That's not lavender scented!",
+        "The most dangerous bath product EVER!",
+        "Fizz buzz BOOM!"
+      ],
+      'PIANO DROP!': [
+        "A piano from NOWHERE!",
+        "Beethoven's FIFTH... of PAIN!",
+        "That's some heavy metal!",
+        "The keys are scattered across the bathroom!",
+        "Tickle the ivories? More like CRUSH them!"
+      ],
+      'DYNAMITE SPIN!': [
+        "Lit fuse, spinning skater \u2014 RUN!",
+        "Dynamite and figure skates \u2014 what could go wrong?!",
+        "She's spinning with EXPLOSIVES!",
+        "The fuse is getting SHORTER!",
+        "Skating with a BANG!"
+      ],
+      'DEATH SPIRAL!': [
+        "The ULTIMATE death spiral!",
+        "Spinning so fast she's a TORNADO!",
+        "The crowd can't even TRACK her!",
+        "A spiral of pure ICE and FURY!",
+        "This is why nobody challenges the skater!"
       ]
     },
     bigHit: [
       "DEVASTATING!", "That's gonna leave a MARK!",
       "ABSOLUTELY BRUTAL!", "OH THE HUMANITY!",
       "Someone call a medic!", "WHAT A HIT!",
-      "The crowd GASPS!", "UNBELIEVABLE POWER!"
+      "The crowd GASPS!", "UNBELIEVABLE POWER!",
+      "The bathroom plumbing is SHAKING!",
+      "Someone check on the goldfish!",
+      "The neighbours just filed a noise complaint!",
+      "That hit echoed through THREE floors!"
     ],
     crowd: [
       "The crowd goes WILD!",
@@ -1260,7 +1378,11 @@
       "Even the toothbrushes are cheering!",
       "The toilet seat just slammed itself shut!",
       "The shampoo bottles are taking cover!",
-      "The towels are waving themselves!"
+      "The towels are waving themselves!",
+      "The bath mat just slid across the floor!",
+      "Someone left the tap running from SHOCK!",
+      "The mirror just CRACKED!",
+      "The loofah is hiding behind the plunger!"
     ],
     finisher: [
       "This is it... THE FINAL BLOW!",
@@ -1507,6 +1629,99 @@
         c.fillRect(260, FLOOR_Y-28, 8, 10); c.fillRect(258, FLOOR_Y-30, 12, 4);
         c.fillRect(290, FLOOR_Y-24, 6, 6); c.fillRect(289, FLOOR_Y-26, 8, 3);
       }},
+    { name: 'UNDERWATER KINGDOM', sky1: '#042840', sky2: '#063850', fl: '#0a4868', fll: '#0c5078',
+      bl: '#063848', rl: '#085060', cA: '#065868', cB: '#086070', cH: '#40c0d8',
+      bg(c, f) {
+        for (let i = 0; i < 12; i++) {
+          const bx = (i * 29 + f * 0.4) % GW;
+          const by = FLOOR_Y - 10 - ((i * 19 + f * 0.7) % (FLOOR_Y - 20));
+          c.fillStyle = 'rgba(100,200,255,0.25)';
+          c.fillRect(bx|0, by|0, 3, 3 + (i%2));
+        }
+        c.fillStyle = '#1a8040';
+        for (let sx = 25; sx < GW; sx += 55) {
+          const h = 18 + (sx * 7 % 16);
+          const sway = Math.sin(f * 0.03 + sx * 0.08) * 3 | 0;
+          c.fillRect(sx + sway, FLOOR_Y - h, 3, h);
+          c.fillRect(sx + sway - 3, FLOOR_Y - h + 5, 3, 7);
+          c.fillRect(sx + sway + 4, FLOOR_Y - h + 9, 3, 5);
+        }
+        c.fillStyle = '#ff6080';
+        c.fillRect(45, FLOOR_Y - 22, 6, 16); c.fillRect(43, FLOOR_Y - 24, 10, 3);
+        c.fillStyle = '#ff8040';
+        c.fillRect(200, FLOOR_Y - 18, 5, 12); c.fillRect(198, FLOOR_Y - 20, 9, 3);
+        c.fillRect(215, FLOOR_Y - 14, 5, 8); c.fillRect(213, FLOOR_Y - 16, 9, 3);
+        const fish1x = (f * 0.6) % (GW + 50) - 25;
+        c.fillStyle = '#ffcc00';
+        c.fillRect(fish1x|0, 55, 8, 5); c.fillRect((fish1x - 3)|0, 56, 3, 3);
+        c.fillStyle = '#111'; c.fillRect((fish1x + 5)|0, 56, 1, 1);
+        const fish2x = GW - (f * 0.45) % (GW + 50) + 25;
+        c.fillStyle = '#ff4466';
+        c.fillRect(fish2x|0, 38, 7, 4); c.fillRect((fish2x + 7)|0, 39, 3, 2);
+        c.fillStyle = '#111'; c.fillRect((fish2x + 1)|0, 39, 1, 1);
+        c.fillStyle = '#8B4513';
+        c.fillRect(140, FLOOR_Y - 12, 14, 8);
+        c.fillStyle = '#A0522D'; c.fillRect(138, FLOOR_Y - 14, 18, 3);
+        c.fillStyle = '#ffd700'; c.fillRect(144, FLOOR_Y - 10, 3, 2);
+      }},
+    { name: 'SPACE STATION', sky1: '#060610', sky2: '#0a0a18', fl: '#2a2a38', fll: '#343448',
+      bl: '#18182a', rl: '#222238', cA: '#2a2a48', cB: '#323250', cH: '#6060a0',
+      bg(c, f) {
+        const sr = mulberry32(999);
+        c.fillStyle = '#666'; for (let i = 0; i < 40; i++) c.fillRect(sr()*GW|0, sr()*(FLOOR_Y-30)|0, 1, 1);
+        c.fillStyle = '#aaa'; for (let i = 0; i < 12; i++) c.fillRect(sr()*GW|0, sr()*(FLOOR_Y-30)|0, 1, 1);
+        c.fillStyle = '#c0c0d0'; c.fillRect(60, 30, 3, 20); c.fillRect(50, 28, 24, 4);
+        c.fillStyle = '#4080c0'; c.fillRect(48, 48, 28, 14);
+        c.fillStyle = '#5090d0'; c.fillRect(52, 50, 20, 10);
+        c.fillStyle = '#888898'; c.fillRect(140, FLOOR_Y - 40, 4, 30); c.fillRect(135, FLOOR_Y - 42, 14, 4);
+        c.fillStyle = '#787888'; c.fillRect(170, FLOOR_Y - 35, 4, 25); c.fillRect(165, FLOOR_Y - 37, 14, 4);
+        c.fillStyle = '#6090b0'; c.fillRect(230, 20, 30, 3); c.fillRect(230, 20, 3, 20); c.fillRect(257, 20, 3, 20);
+        if (f % 8 < 4) { c.fillStyle = '#ff3030'; c.fillRect(243, 19, 2, 2); }
+        else { c.fillStyle = '#303030'; c.fillRect(243, 19, 2, 2); }
+        c.fillStyle = 'rgba(0,150,255,0.06)'; c.fillRect(0, FLOOR_Y, GW, GH - FLOOR_Y);
+        c.globalAlpha = 0.08; c.fillStyle = '#4080ff';
+        for (let bx = 0; bx < GW; bx += 40) c.fillRect(bx, FLOOR_Y + 2 + (Math.sin(f * 0.02 + bx * 0.1) * 10|0), 30, 1);
+        c.globalAlpha = 1;
+      }},
+    { name: 'TREEHOUSE', sky1: '#4080c0', sky2: '#60a0e0', fl: '#8B6914', fll: '#7a5a10',
+      bl: '#5a3a10', rl: '#6a4a14', cA: '#4a3010', cB: '#5a4018', cH: '#806030',
+      bg(c, f) {
+        c.fillStyle = '#f0e8d0'; c.fillRect(40, 50, 24, 14); c.fillRect(120, 35, 28, 18); c.fillRect(220, 55, 20, 12);
+        c.fillStyle = '#2a5020'; c.fillRect(15, FLOOR_Y - 70, 8, 50); c.fillRect(85, FLOOR_Y - 80, 10, 60); c.fillRect(185, FLOOR_Y - 65, 7, 45); c.fillRect(270, FLOOR_Y - 75, 9, 55);
+        c.fillStyle = '#3a6a30';
+        c.fillRect(5, FLOOR_Y - 78, 28, 14); c.fillRect(75, FLOOR_Y - 88, 30, 16); c.fillRect(175, FLOOR_Y - 73, 26, 12); c.fillRect(260, FLOOR_Y - 83, 28, 14);
+        c.fillStyle = '#4a7a40';
+        c.fillRect(8, FLOOR_Y - 84, 22, 10); c.fillRect(80, FLOOR_Y - 94, 24, 10); c.fillRect(178, FLOOR_Y - 79, 20, 8); c.fillRect(264, FLOOR_Y - 89, 22, 10);
+        c.fillStyle = '#6a4a20'; c.fillRect(70, FLOOR_Y - 50, 50, 4); c.fillRect(75, FLOOR_Y - 46, 40, 30);
+        c.fillStyle = '#5a3a18'; c.fillRect(80, FLOOR_Y - 38, 8, 10);
+        c.fillStyle = '#8a6a30'; c.fillRect(68, FLOOR_Y - 52, 54, 3);
+        c.fillStyle = '#a0a0a0'; c.fillRect(86, FLOOR_Y - 70, 1, 20); c.fillRect(104, FLOOR_Y - 70, 1, 20); c.fillRect(84, FLOOR_Y - 72, 24, 2);
+        if (f % 50 < 25) { c.fillStyle = '#ffc'; c.fillRect(88, FLOOR_Y - 64, 3, 3); c.fillRect(100, FLOOR_Y - 64, 3, 3); }
+      }},
+    { name: 'DINO JUNGLE', sky1: '#406028', sky2: '#508030', fl: '#504020', fll: '#604828',
+      bl: '#304020', rl: '#405028', cA: '#384820', cB: '#485828', cH: '#708840',
+      bg(c, f) {
+        c.fillStyle = '#cc5500'; c.fillRect(260, 10, 30, 30); c.fillRect(258, 12, 34, 26);
+        c.fillStyle = '#ff8830'; c.fillRect(266, 18, 16, 16);
+        c.fillStyle = '#1a3820';
+        c.fillRect(10, FLOOR_Y - 50, 40, 32); c.fillRect(80, FLOOR_Y - 60, 50, 42); c.fillRect(200, FLOOR_Y - 45, 35, 27); c.fillRect(260, FLOOR_Y - 55, 45, 37);
+        c.fillStyle = '#4a3020';
+        c.fillRect(30, FLOOR_Y - 50, 6, 40); c.fillRect(105, FLOOR_Y - 60, 8, 50); c.fillRect(218, FLOOR_Y - 45, 6, 35); c.fillRect(282, FLOOR_Y - 55, 7, 45);
+        c.fillStyle = '#2a4a20';
+        for (let fx = 15; fx < GW; fx += 40) {
+          const h = 20 + (fx * 3 % 15);
+          c.fillRect(fx, FLOOR_Y - 30 - h, 4, h);
+          c.fillRect(fx - 8, FLOOR_Y - 28 - h, 12, 4);
+          c.fillRect(fx - 4, FLOOR_Y - 32 - h, 8, 4);
+        }
+        c.fillStyle = '#306830';
+        c.fillRect(150, FLOOR_Y - 55, 6, 18); c.fillRect(148, FLOOR_Y - 57, 10, 4);
+        c.fillRect(156, FLOOR_Y - 65, 4, 12); c.fillRect(154, FLOOR_Y - 67, 8, 4);
+        c.fillRect(160, FLOOR_Y - 60, 20, 4); c.fillRect(178, FLOOR_Y - 64, 4, 8);
+        c.fillStyle = '#f0d020'; c.fillRect(155, FLOOR_Y - 55, 2, 1); c.fillRect(158, FLOOR_Y - 55, 2, 1);
+        c.fillStyle = '#405828'; c.fillRect(50, FLOOR_Y - 24, 6, 8); c.fillRect(48, FLOOR_Y - 26, 10, 4); c.fillRect(54, FLOOR_Y - 32, 3, 10);
+        c.fillStyle = '#e0e0d0'; c.fillRect(52, FLOOR_Y - 16, 3, 3); c.fillRect(56, FLOOR_Y - 14, 2, 2);
+      }}
   ];
 
   // ==================== BATTLE GENERATION ====================
@@ -1563,10 +1778,33 @@
       const attacker = attackers[i];
       const pool = attacker === 'cow' ? COW_MOVES : SKATER_MOVES;
       const isFinisher = i === roundCount - 1;
-      const move = isFinisher ? (pool.find(m => m.finisher) || pool[0]) : pool[Math.floor(rng() * (pool.length - 1))];
+      const fins = pool.filter(m => m.finisher);
+      const gagMoves = pool.filter(m => m.gag && !m.finisher);
+      const normalMoves = pool.filter(m => !m.gag && !m.finisher);
+      let move;
+      if (isFinisher) {
+        move = fins.length ? fins[Math.floor(rng() * fins.length)] : pool[0];
+      } else {
+        const useGag = gagMoves.length > 0 && (rng() < 0.45);
+        move = useGag
+          ? gagMoves[Math.floor(rng() * gagMoves.length)]
+          : normalMoves[Math.floor(rng() * normalMoves.length)];
+      }
       const damage = attacker === winner ? winnerDamages[wi++] : loserDamages[li++];
       rounds.push({ attacker, move, damage, isFinisher, round: i + 1, totalRounds: roundCount });
     }
+
+    const hasGag = rounds.some(r => r.move.gag);
+    if (!hasGag && roundCount > 2) {
+      const replaceIdx = 1 + Math.floor(rng() * (roundCount - 2));
+      const r = rounds[replaceIdx];
+      const pool = r.attacker === 'cow' ? COW_MOVES : SKATER_MOVES;
+      const gagMoves = pool.filter(m => m.gag && !m.finisher);
+      if (gagMoves.length) {
+        rounds[replaceIdx] = { ...r, move: gagMoves[Math.floor(rng() * gagMoves.length)] };
+      }
+    }
+
     return rounds;
   }
 
@@ -1874,6 +2112,102 @@
     ctx2d.globalAlpha = 1;
   }
 
+  function drawComedyObject(ctx2d) {
+    const co = game.comedy;
+    if (!co || !co.active) return;
+    const x = Math.floor(co.x);
+    const y = Math.floor(co.y);
+    if (co.type === 'anvil') {
+      ctx2d.fillStyle = '#3a3a4a';
+      ctx2d.fillRect(x - 10, y - 12, 20, 14);
+      ctx2d.fillRect(x - 12, y + 2, 24, 4);
+      ctx2d.fillStyle = '#4a4a5a';
+      ctx2d.fillRect(x - 8, y - 10, 16, 2);
+      if (co.squish > 0) {
+        ctx2d.fillStyle = '#ffd447';
+        for (let i = 0; i < 5; i++) ctx2d.fillRect(x - 16 + i * 8, y + 8, 2, 6);
+      }
+    } else if (co.type === 'piano') {
+      ctx2d.fillStyle = '#1a1a1a';
+      ctx2d.fillRect(x - 14, y - 16, 28, 20);
+      ctx2d.fillStyle = '#f0e8d0';
+      for (let kx = x - 11; kx < x + 13; kx += 4) ctx2d.fillRect(kx, y - 10, 3, 8);
+      ctx2d.fillStyle = '#1a1a1a';
+      for (let kx = x - 9; kx < x + 13; kx += 8) ctx2d.fillRect(kx, y - 10, 2, 8);
+      ctx2d.fillStyle = '#c0a020';
+      ctx2d.fillRect(x - 14, y - 18, 28, 3);
+      if (co.squish > 0) {
+        ctx2d.fillStyle = '#ffd447';
+        for (let i = 0; i < 4; i++) ctx2d.fillRect(x - 12 + i * 8, y + 6, 2, 5);
+      }
+    } else if (co.type === 'safe') {
+      ctx2d.fillStyle = '#5a5a30';
+      ctx2d.fillRect(x - 12, y - 14, 24, 18);
+      ctx2d.fillRect(x - 14, y + 4, 28, 4);
+      ctx2d.fillStyle = '#3a3a20';
+      ctx2d.fillRect(x - 4, y - 6, 8, 6);
+      ctx2d.fillStyle = '#ffd447';
+      ctx2d.fillRect(x - 3, y - 5, 2, 2);
+      if (co.squish > 0) {
+        ctx2d.fillStyle = '#ffd447';
+        for (let i = 0; i < 5; i++) ctx2d.fillRect(x - 14 + i * 7, y + 10, 2, 5);
+      }
+    } else if (co.type === 'bomb') {
+      ctx2d.fillStyle = '#1a1a2a';
+      ctx2d.fillRect(x - 5, y - 5, 10, 10);
+      ctx2d.fillRect(x - 4, y - 6, 8, 12);
+      ctx2d.fillRect(x - 6, y - 4, 12, 8);
+      ctx2d.fillStyle = '#8B4513';
+      ctx2d.fillRect(x + 3, y - 10, 2, 6);
+      if (game.frame % 6 < 3) {
+        ctx2d.fillStyle = '#ffd447';
+        ctx2d.fillRect(x + 2, y - 12, 4, 3);
+        ctx2d.fillStyle = '#ff4444';
+        ctx2d.fillRect(x + 3, y - 14, 2, 3);
+      }
+    } else if (co.type === 'bathbomb') {
+      ctx2d.fillStyle = '#88ddff';
+      ctx2d.fillRect(x - 5, y - 5, 10, 10);
+      ctx2d.fillRect(x - 4, y - 6, 8, 12);
+      ctx2d.fillRect(x - 6, y - 4, 12, 8);
+      ctx2d.fillStyle = '#ff88cc';
+      ctx2d.fillRect(x - 3, y - 3, 3, 3);
+      ctx2d.fillStyle = '#88ff88';
+      ctx2d.fillRect(x + 1, y + 1, 3, 3);
+      if (game.frame % 6 < 3) {
+        ctx2d.fillStyle = '#ffffff';
+        ctx2d.fillRect(x - 1, y - 8, 3, 3);
+      }
+    } else if (co.type === 'dynamite') {
+      ctx2d.fillStyle = '#cc2222';
+      ctx2d.fillRect(x - 2, y - 8, 4, 16);
+      ctx2d.fillStyle = '#ee4444';
+      ctx2d.fillRect(x - 3, y - 6, 6, 12);
+      ctx2d.fillStyle = '#8B4513';
+      ctx2d.fillRect(x - 1, y - 12, 2, 5);
+      if (game.frame % 8 < 4) {
+        ctx2d.fillStyle = '#ffd447';
+        ctx2d.fillRect(x - 2, y - 14, 5, 3);
+      }
+    } else if (co.type === 'duck') {
+      const bounceY = Math.abs(Math.sin(game.frame * 0.2)) * -10;
+      ctx2d.fillStyle = '#ffd447';
+      ctx2d.fillRect(x - 4, y + bounceY - 4, 8, 6);
+      ctx2d.fillRect(x - 3, y + bounceY - 7, 5, 4);
+      ctx2d.fillStyle = '#ff8c00';
+      ctx2d.fillRect(x + 4, y + bounceY - 4, 3, 2);
+      ctx2d.fillStyle = '#111';
+      ctx2d.fillRect(x + 1, y + bounceY - 5, 1, 1);
+    } else if (co.type === 'tp') {
+      ctx2d.fillStyle = '#f0e8e0';
+      ctx2d.fillRect(x - 3, y - 7, 6, 10);
+      ctx2d.fillStyle = '#e0d8d0';
+      ctx2d.fillRect(x - 2, y - 6, 4, 8);
+      ctx2d.fillStyle = '#c8c0b0';
+      ctx2d.fillRect(x - 1, y - 5, 2, 6);
+    }
+  }
+
   // ==================== GAME LOOP ====================
   function drawGame() {
     game.frame += 1;
@@ -1895,6 +2229,7 @@
     drawAura(ctx, game.skater.x, FLOOR_Y + game.skater.y, 'rgba(17,221,178,0.6)', game.skater.aura);
     drawCow(ctx, game.cow.x, FLOOR_Y + game.cow.y, { pose: game.cow.pose, flash: game.cow.flash, bob: bobCow, spin: game.cow.spin });
     drawSkater(ctx, game.skater.x, FLOOR_Y + game.skater.y, { pose: game.skater.pose, flash: game.skater.flash, bob: bobSkater, spin: game.skater.spin });
+    drawComedyObject(ctx);
     drawEffects(ctx);
     ctx.restore();
 
@@ -2015,6 +2350,62 @@
       if (round.damage >= 20 && cRng) setCommentary(pickLine(COMMENTARY.bigHit, cRng));
       await tween(defender, 'x', defender.baseX + dir * 10, 100, token, 'in');
       await tween(defender, 'x', defender.baseX, 180, token);
+    } else if (round.move.anim === 'anvil') {
+      game.comedy = { type: round.move.gag || 'anvil', x: defender.x, y: -30, active: true, squish: 0 };
+      await wait(200, token);
+      if (token !== battleToken) return false;
+      await tween(game.comedy, 'y', FLOOR_Y - 18, 350, token, 'in');
+      if (token !== battleToken) return false;
+      playSound(round.isFinisher ? 'anvil' : 'heavy-hit');
+      defender.flash = 14;
+      defender.pose = 'hit';
+      game.comedy.squish = 1;
+      addBurst(defender.x, FLOOR_Y - 8, round.move.particles, round.isFinisher ? 20 : 12, 0);
+      addDamageText(defender.x - 5, FLOOR_Y - 34, round.damage);
+      addShake(round.isFinisher ? 14 : 8);
+      defender.hp = Math.max(0, defender.hp - round.damage);
+      updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
+      (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      if (round.damage >= 20 && cRng) setCommentary(pickLine(COMMENTARY.bigHit, cRng));
+      await tween(defender, 'x', defender.baseX + dir * 14, 120, token, 'in');
+      await tween(defender, 'x', defender.baseX, 200, token);
+    } else if (round.move.anim === 'bomb') {
+      attacker.pose = 'ranged';
+      const bombStartX = attacker.x + dir * 14;
+      const bombEndX = defender.x - dir * 8;
+      const bombStartY = FLOOR_Y - 14;
+      const bombEndY = FLOOR_Y - 12;
+      game.comedy = { type: round.move.gag || 'bomb', x: bombStartX, y: bombStartY, active: true, squish: 0 };
+      playSound('projectile');
+      await Promise.all([
+        tween(game.comedy, 'x', bombEndX, 480, token),
+        new Promise(resolve => {
+          const t0 = performance.now();
+          function arcFrame(now) {
+            if (token !== battleToken) return resolve(false);
+            const t = Math.min((now - t0) / 480, 1);
+            const arc = 35 * 4 * t * (1 - t);
+            game.comedy.y = bombStartY + (bombEndY - bombStartY) * t - arc;
+            if (t < 1) requestAnimationFrame(arcFrame);
+            else resolve(true);
+          }
+          requestAnimationFrame(arcFrame);
+        })
+      ]);
+      if (token !== battleToken) return false;
+      game.comedy.active = false;
+      playSound(round.isFinisher ? 'bomb' : 'heavy-hit');
+      defender.flash = 14;
+      defender.pose = 'hit';
+      addBurst(defender.x, FLOOR_Y - 10, round.move.particles, round.isFinisher ? 20 : 12, dir);
+      addDamageText(defender.x - 5, FLOOR_Y - 34, round.damage);
+      addShake(round.isFinisher ? 14 : 8);
+      defender.hp = Math.max(0, defender.hp - round.damage);
+      updateBar(defenderName === 'cow' ? cowHPBar : skaterHPBar, defender.hp, defenderName === 'skater');
+      (defenderName === 'cow' ? cowHPText : skaterHPText).textContent = String(Math.round(defender.hp));
+      if (round.damage >= 20 && cRng) setCommentary(pickLine(COMMENTARY.bigHit, cRng));
+      await tween(defender, 'x', defender.baseX + dir * 14, 120, token, 'in');
+      await tween(defender, 'x', defender.baseX, 200, token);
     }
 
     clearBattleText();
@@ -2032,6 +2423,56 @@
     if (token !== battleToken) return false;
     overlay.classList.add('hidden');
     return true;
+  }
+
+  async function runComedyInterlude(token, rng) {
+    const gags = [
+      async () => {
+        setCommentary("A wild rubber duck appears!");
+        playSound('squeak');
+        game.comedy = { type: 'duck', x: -20, y: FLOOR_Y - 22, active: true, squish: 0 };
+        await tween(game.comedy, 'x', GW + 30, 1200, token);
+        game.comedy = null;
+        clearCommentary();
+        return true;
+      },
+      async () => {
+        setCommentary("INCOMING!! ...oh, it missed.");
+        const midX = (game.cow.x + game.skater.x) / 2;
+        game.comedy = { type: 'anvil', x: midX, y: -30, active: true, squish: 0 };
+        await tween(game.comedy, 'y', FLOOR_Y + 2, 350, token, 'in');
+        playSound('anvil');
+        addShake(6);
+        addBurst(midX, FLOOR_Y, 'dust', 10, 0);
+        await wait(500, token);
+        game.comedy = null;
+        clearCommentary();
+        return true;
+      },
+      async () => {
+        setCommentary("Emergency toilet paper delivery!");
+        game.comedy = { type: 'tp', x: GW + 15, y: FLOOR_Y - 4, active: true, squish: 0 };
+        await tween(game.comedy, 'x', -20, 1400, token);
+        game.comedy = null;
+        clearCommentary();
+        return true;
+      },
+      async () => {
+        setCommentary("Look out! A wild piano! ...never mind.");
+        const target = rng() < 0.5 ? game.cow : game.skater;
+        game.comedy = { type: 'piano', x: target.x, y: -40, active: true, squish: 0 };
+        await tween(game.comedy, 'y', FLOOR_Y - 24, 400, token, 'in');
+        await tween(game.comedy, 'x', target.x + (rng() < 0.5 ? 40 : -40), 200, token);
+        playSound('anvil');
+        addShake(4);
+        await wait(400, token);
+        game.comedy = null;
+        clearCommentary();
+        return true;
+      }
+    ];
+    const idx = Math.floor(rng() * gags.length);
+    return await gags[idx]();
   }
 
   async function runBattle() {
@@ -2099,6 +2540,11 @@
         await wait(500, token);
         if (token !== battleToken) return;
         clearCommentary();
+      }
+      // ~18% chance of comedy interlude
+      if (!round.isFinisher && commentaryRng() < 0.18) {
+        const gagOk = await runComedyInterlude(token, commentaryRng);
+        if (!gagOk || token !== battleToken) return;
       }
     }
 
