@@ -827,7 +827,9 @@
     shake: { x: 0, y: 0, intensity: 0 },
     crowd: [],
     winner: null,
-    comedy: null
+    comedy: null,
+    weather: null,
+    victoryDance: null
   };
 
   function mulberry32(a) {
@@ -913,6 +915,8 @@
     game.winner = null;
     game.stage = null;
     game.comedy = null;
+    game.weather = null;
+    game.victoryDance = null;
     const rng = mulberry32(12345);
     game.crowd = Array.from({ length: 30 }, (_, i) => ({
       x: 8 + i * 10,
@@ -1037,6 +1041,30 @@
       case 'squeak':
         tone(1200, 0.06, 'square', 0.02, 0);
         tone(900, 0.08, 'square', 0.02, 0.06);
+        break;
+      case 'splash':
+        tone(600, 0.06, 'sine', 0.02, 0);
+        tone(400, 0.08, 'sine', 0.025, 0.06);
+        noiseBurst(0.06, 0.015, 0);
+        break;
+      case 'frost':
+        tone(2000, 0.08, 'sine', 0.015, 0);
+        tone(1600, 0.1, 'sine', 0.012, 0.08);
+        tone(1200, 0.12, 'sine', 0.01, 0.16);
+        break;
+      case 'lava':
+        tone(80, 0.15, 'sawtooth', 0.02, 0);
+        tone(60, 0.2, 'sawtooth', 0.025, 0.1);
+        noiseBurst(0.1, 0.02, 0.05);
+        break;
+      case 'quack':
+        tone(800, 0.04, 'square', 0.02, 0);
+        tone(600, 0.06, 'square', 0.02, 0.04);
+        tone(800, 0.04, 'square', 0.02, 0.1);
+        break;
+      case 'crack':
+        tone(3000, 0.02, 'square', 0.03, 0);
+        noiseBurst(0.03, 0.02, 0);
         break;
     }
   }
@@ -1169,7 +1197,12 @@
     { name: 'BOMB SNEEZE!', anim: 'bomb', particles: 'spark', gag: 'bomb' },
     { name: 'PIANO CRASH!', anim: 'anvil', particles: 'impact', gag: 'piano' },
     { name: 'HIGHLAND CHARGE!', anim: 'rush', particles: 'impact', finisher: true },
-    { name: 'MEGA MOO BLAST!', anim: 'anvil', particles: 'moo', gag: 'safe', finisher: true }
+    { name: 'MEGA MOO BLAST!', anim: 'anvil', particles: 'moo', gag: 'safe', finisher: true },
+    { name: 'BATH TIME BELLOW!', anim: 'ranged', particles: 'water' },
+    { name: 'SHAMPOO SPRAY!', anim: 'ranged', particles: 'soap' },
+    { name: 'TOWEL WHIP!', anim: 'rush', particles: 'impact' },
+    { name: 'RUBBER DUCK ARMY!', anim: 'bomb', particles: 'impact', gag: 'duck' },
+    { name: 'FLOOR IS LAVA!', anim: 'jump', particles: 'lava' }
   ];
 
   const SKATER_MOVES = [
@@ -1184,7 +1217,12 @@
     { name: 'PIANO DROP!', anim: 'anvil', particles: 'ice', gag: 'piano' },
     { name: 'DYNAMITE SPIN!', anim: 'bomb', particles: 'spark', gag: 'dynamite' },
     { name: 'QUAD LUTZ!', anim: 'jump', particles: 'ice', finisher: true },
-    { name: 'DEATH SPIRAL!', anim: 'spin', particles: 'ice', finisher: true }
+    { name: 'DEATH SPIRAL!', anim: 'spin', particles: 'ice', finisher: true },
+    { name: 'CONDITIONER SLIP!', anim: 'bomb', particles: 'soap', gag: 'bathbomb' },
+    { name: 'LOOFAH LASH!', anim: 'spin', particles: 'soap' },
+    { name: 'FROSTY BREATH!', anim: 'ranged', particles: 'ice' },
+    { name: 'SPRINKLER SURGE!', anim: 'bomb', particles: 'water', gag: 'tp' },
+    { name: 'MIRROR FLASH!', anim: 'ranged', particles: 'spark' }
   ];
 
   // ==================== COMMENTARY ====================
@@ -1357,6 +1395,76 @@
         "The crowd can't even TRACK her!",
         "A spiral of pure ICE and FURY!",
         "This is why nobody challenges the skater!"
+      ],
+      'BATH TIME BELLOW!': [
+        "That bellow shook the SHOWER CURTAIN!",
+        "MOO echoing off the bathroom tiles!",
+        "The water pressure just DOUBLED!",
+        "Even the pipes are shaking!",
+        "That's not a bellow — it's a TSUNAMI!"
+      ],
+      'SHAMPOO SPRAY!': [
+        "Conditioner in the EYES!",
+        "Misha's going for the 3-in-1 combo!",
+        "That spray has VOLUME!",
+        "Shampoo so powerful it's INDUSTRIAL!",
+        "The bottle is EMPTY now!"
+      ],
+      'TOWEL WHIP!': [
+        "The towel of DOOM!",
+        "CRACK! That towel is a WEAPON!",
+        "A wet towel hits HARDER!",
+        "Classic sibling warfare!",
+        "That towel has been MARINATING!"
+      ],
+      'RUBBER DUCK ARMY!': [
+        "QUACK QUACK QUACK!",
+        "The rubber ducks are ATTACKING!",
+        "An army of SQUEAKY destruction!",
+        "Ducks: 1, Maggie: 0!",
+        "They're EVERYWHERE!"
+      ],
+      'FLOOR IS LAVA!': [
+        "THE FLOOR IS LAVA! And she MEANS it!",
+        "Magma rising from the DRAIN!",
+        "That's not a game — that's REAL lava!",
+        "The bathroom tiles are MELTING!",
+        "Lava mode: ACTIVATED!"
+      ],
+      'CONDITIONER SLIP!': [
+        "Slippery when CONDITIONED!",
+        "That floor is now an ICE RINK!",
+        "Maggie's secret weapon: SILKY SMOOTH!",
+        "Watch out — it's a SLIDE!",
+        "The conditioner is working OVERTIME!"
+      ],
+      'LOOFAH LASH!': [
+        "The loofah of FURY!",
+        "Exfoliating AND devastating!",
+        "That loofah has been TRAINING!",
+        "Spinning loofah = SPINNING DEATH!",
+        "The exfoliation is BRUTAL!"
+      ],
+      'FROSTY BREATH!': [
+        "Her breath is ARCTIC!",
+        "The mirror just FROZE OVER!",
+        "Ice cold stare made REAL!",
+        "That breath could freeze a VOLCANO!",
+        "The toothpaste just turned to ICE!"
+      ],
+      'SPRINKLER SURGE!': [
+        "The sprinkler system went OFF!",
+        "Water from EVERYWHERE!",
+        "Maggie hacked the PLUMBING!",
+        "It's a bathroom CAR WASH!",
+        "The water bill just DOUBLED!"
+      ],
+      'MIRROR FLASH!': [
+        "Blinded by REFLECTION!",
+        "That mirror is a WEAPON!",
+        "Maggie angles the glass PERFECTLY!",
+        "Solar-powered MIRROR BLAST!",
+        "Even the sun is helping Maggie!"
       ]
     },
     bigHit: [
@@ -1721,7 +1829,217 @@
         c.fillStyle = '#f0d020'; c.fillRect(155, FLOOR_Y - 55, 2, 1); c.fillRect(158, FLOOR_Y - 55, 2, 1);
         c.fillStyle = '#405828'; c.fillRect(50, FLOOR_Y - 24, 6, 8); c.fillRect(48, FLOOR_Y - 26, 10, 4); c.fillRect(54, FLOOR_Y - 32, 3, 10);
         c.fillStyle = '#e0e0d0'; c.fillRect(52, FLOOR_Y - 16, 3, 3); c.fillRect(56, FLOOR_Y - 14, 2, 2);
+      }},
+    { name: 'BACKYARD FORT', sky1: '#2a1808', sky2: '#3a2810', fl: '#5a3820', fll: '#4a2810',
+      bl: '#1a1008', rl: '#2a1810', cA: '#2a1a08', cB: '#3a2a10', cH: '#6a5030',
+      bg(c, f) {
+        // Blanket ceiling
+        c.fillStyle = '#4a3020'; c.fillRect(0, 0, GW, 12);
+        c.fillStyle = '#5a4030'; c.fillRect(0, 12, GW, 4);
+        // Pillow walls
+        c.fillStyle = '#cc6644'; c.fillRect(0, 16, 8, FLOOR_Y - 16);
+        c.fillStyle = '#4488cc'; c.fillRect(GW - 8, 16, 8, FLOOR_Y - 16);
+        // Flashlight beams
+        c.globalAlpha = 0.08 + Math.sin(f * 0.03) * 0.03;
+        c.fillStyle = '#ffff80'; c.fillRect(30, 20, 40, 60);
+        c.globalAlpha = 0.06 + Math.sin(f * 0.04 + 1) * 0.03;
+        c.fillStyle = '#ffff80'; c.fillRect(240, 30, 50, 50);
+        c.globalAlpha = 1;
+        // Cardboard signs
+        c.fillStyle = '#8a7050'; c.fillRect(100, FLOOR_Y - 30, 40, 14);
+        c.fillStyle = '#ff4444'; c.fillRect(108, FLOOR_Y - 27, 24, 8);
+        // String lights
+        c.fillStyle = '#6a5030';
+        for (let sx = 20; sx < GW - 20; sx += 30) c.fillRect(sx, 18 + Math.sin(sx * 0.05) * 4|0, 1, 2);
+        const bulbColors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff'];
+        for (let i = 0; i < 8; i++) {
+          const bx = 20 + i * 38;
+          const by = 18 + Math.sin(bx * 0.05) * 4;
+          c.fillStyle = f % 30 < 15 ? bulbColors[i % 5] : '#333';
+          c.fillRect(bx, by|0, 3, 3);
+        }
+        // Cushion floor
+        c.fillStyle = '#6a4830'; c.fillRect(8, FLOOR_Y, GW - 16, GH - FLOOR_Y);
+        c.fillStyle = '#7a5840';
+        for (let cx = 20; cx < GW - 20; cx += 24) c.fillRect(cx, FLOOR_Y + 2, 20, 1);
+      }},
+    { name: 'GROCERY STORE', sky1: '#e0e8f0', sky2: '#d0d8e0', fl: '#c0c8d0', fll: '#b0b8c0',
+      bl: '#d0d8e0', rl: '#a0a8b0', cA: '#b0b8c0', cB: '#c0c8d0', cH: '#e0e8f0',
+      bg(c, f) {
+        // Fluorescent lights
+        c.fillStyle = '#f0f0f0';
+        for (let lx = 20; lx < GW; lx += 60) c.fillRect(lx, 4, 40, 4);
+        c.fillStyle = 'rgba(255,255,255,0.3)';
+        for (let lx = 20; lx < GW; lx += 60) c.fillRect(lx + 4, 8, 32, 8);
+        // Aisle shelves
+        c.fillStyle = '#808890';
+        for (let sy = 30; sy < FLOOR_Y - 20; sy += 28) {
+          c.fillRect(0, sy, GW, 2);
+          // Products on shelves
+          const colors = ['#ff4444', '#44aa44', '#4444ff', '#ffaa00', '#ff44ff', '#44ffff'];
+          for (let px = 10; px < GW - 10; px += 18) {
+            c.fillStyle = colors[(px + sy) % 6];
+            const ph = 8 + ((px * 7 + sy * 3) % 12);
+            c.fillRect(px, sy - ph, 12, ph);
+          }
+        }
+        // Spill puddle
+        c.fillStyle = 'rgba(100,200,100,0.3)';
+        c.fillRect(140, FLOOR_Y - 2, 30, 4);
+        c.fillStyle = 'rgba(100,200,100,0.15)';
+        c.fillRect(135, FLOOR_Y, 40, 3);
+        // Shopping cart
+        c.fillStyle = '#888'; c.fillRect(260, FLOOR_Y - 18, 20, 14);
+        c.fillStyle = '#999'; c.fillRect(262, FLOOR_Y - 16, 16, 10);
+        c.fillStyle = '#666'; c.fillRect(264, FLOOR_Y - 4, 3, 6); c.fillRect(274, FLOOR_Y - 4, 3, 6);
+        // Wet floor sign
+        c.fillStyle = '#ffcc00'; c.fillRect(80, FLOOR_Y - 14, 8, 14);
+        c.fillStyle = '#333'; c.fillRect(81, FLOOR_Y - 12, 6, 4);
+      }},
+    { name: 'CANDY KINGDOM', sky1: '#ffb0d0', sky2: '#ffd0e0', fl: '#ffaacc', fll: '#ff99bb',
+      bl: '#e090b0', rl: '#d080a0', cA: '#c07898', cB: '#d088a8', cH: '#e0a0c0',
+      bg(c, f) {
+        // Cotton candy clouds
+        c.fillStyle = '#ffc8e0'; c.fillRect(20, 16, 30, 12); c.fillRect(14, 20, 42, 8);
+        c.fillStyle = '#ffe0f0'; c.fillRect(180, 10, 36, 14); c.fillRect(174, 16, 48, 8);
+        c.fillRect(100, 28, 24, 10); c.fillRect(96, 32, 32, 6);
+        // Lollipop trees
+        const lollies = [[50,'#ff4444',8],[130,'#44cc44',7],[210,'#4488ff',8],[280,'#ffaa00',6]];
+        for (const [lx,lc,lr] of lollies) {
+          c.fillStyle = '#e8c8a0'; c.fillRect(lx, FLOOR_Y-50, 3, 32);
+          c.fillStyle = lc; c.fillRect(lx-lr, FLOOR_Y-50-lr*2, lr*2+3, lr*2); c.fillRect(lx-lr+2, FLOOR_Y-52-lr*2, lr*2-1, lr*2+4);
+          c.fillStyle = '#fff'; c.fillRect(lx-2, FLOOR_Y-50-lr, lr+2, 2);
+        }
+        // Chocolate river
+        c.fillStyle = '#6a3a20'; c.fillRect(0, FLOOR_Y + 4, GW, 8);
+        c.fillStyle = '#7a4a30';
+        for (let wx = 0; wx < GW; wx += 16) c.fillRect(wx + (Math.sin(f * 0.04 + wx * 0.1) * 3|0), FLOOR_Y + 5, 10, 2);
+        // Gummy bear crowd
+        const gummyColors = ['#ff4444', '#44ff44', '#ffaa00', '#ff44ff', '#44aaff'];
+        for (let i = 0; i < 20; i++) {
+          const gx = 10 + i * 15;
+          const gc = gummyColors[i % 5];
+          const bounce = Math.sin(f * 0.06 + i * 0.5) * 2;
+          c.fillStyle = gc;
+          c.fillRect(gx, FLOOR_Y - 16 + bounce|0, 6, 10);
+          c.fillRect(gx + 1, FLOOR_Y - 18 + bounce|0, 4, 3);
+          c.fillStyle = '#fff'; c.fillRect(gx + 1, FLOOR_Y - 17 + bounce|0, 1, 1); c.fillRect(gx + 4, FLOOR_Y - 17 + bounce|0, 1, 1);
+        }
+        // Rainbow floor stripes
+        const rainbow = ['#ff4444','#ff8844','#ffcc44','#44cc44','#4488ff','#8844cc'];
+        for (let ri = 0; ri < rainbow.length; ri++) {
+          c.fillStyle = rainbow[ri]; c.globalAlpha = 0.18; c.fillRect(0, FLOOR_Y + ri*5, GW, 5); c.globalAlpha = 1;
+        }
+        // Candy cane pillars
+        c.fillStyle = '#ff4444'; c.fillRect(5, FLOOR_Y - 60, 4, 60); c.fillRect(5, FLOOR_Y - 56, 4, 4);
+        c.fillStyle = '#fff'; c.fillRect(5, FLOOR_Y - 52, 4, 4); c.fillRect(5, FLOOR_Y - 44, 4, 4); c.fillRect(5, FLOOR_Y - 36, 4, 4);
+        c.fillRect(GW - 9, FLOOR_Y - 60, 4, 60); c.fillRect(GW - 9, FLOOR_Y - 56, 4, 4);
+        c.fillStyle = '#fff'; c.fillRect(GW - 9, FLOOR_Y - 52, 4, 4); c.fillRect(GW - 9, FLOOR_Y - 44, 4, 4);
       }}
+  ];
+
+  // ==================== WEATHER EVENTS ====================
+  const WEATHER_EVENTS = [
+    {
+      name: 'RAIN',
+      announce: 'SUDDEN DOWNPOUR!',
+      duration: 300,
+      init(rng) { return { drops: Array.from({length: 40}, () => ({x: rng()*GW, y: rng()*FLOOR_Y, speed: 1.5 + rng()*2})) }; },
+      update(w, f) {
+        for (const d of w.drops) {
+          d.y += d.speed;
+          d.x -= 0.5;
+          if (d.y > FLOOR_Y) { d.y = -5; d.x = Math.random() * GW; }
+        }
+      },
+      draw(ctx2d, w) {
+        ctx2d.fillStyle = 'rgba(100,180,255,0.5)';
+        for (const d of w.drops) ctx2d.fillRect(d.x|0, d.y|0, 1, 3);
+        ctx2d.fillStyle = 'rgba(100,180,255,0.08)';
+        ctx2d.fillRect(0, 0, GW, GH);
+      }
+    },
+    {
+      name: 'EARTHQUAKE',
+      announce: 'EARTHQUAKE!',
+      duration: 200,
+      init() { return { intensity: 0 }; },
+      update(w, f) {
+        w.intensity = 3 * Math.sin(f * 0.05) * Math.max(0, 1 - f / 200);
+        game.shake.intensity = Math.max(game.shake.intensity, Math.abs(w.intensity) * 2);
+      },
+      draw(ctx2d) {
+        ctx2d.fillStyle = 'rgba(255,100,50,0.04)';
+        ctx2d.fillRect(0, 0, GW, GH);
+      }
+    },
+    {
+      name: 'FOG',
+      announce: 'THICK FOG ROLLS IN!',
+      duration: 350,
+      init() { return { density: 0 }; },
+      update(w, f) {
+        w.density = Math.min(0.4, f / 350 * 0.4);
+      },
+      draw(ctx2d, w) {
+        ctx2d.fillStyle = `rgba(200,210,220,${w.density * 0.5})`;
+        ctx2d.fillRect(0, 0, GW, GH);
+        for (let i = 0; i < 8; i++) {
+          const fy = 30 + i * 18 + Math.sin(game.frame * 0.01 + i) * 5;
+          ctx2d.fillStyle = `rgba(200,210,220,${w.density * 0.3})`;
+          ctx2d.fillRect(0, fy|0, GW, 12);
+        }
+      }
+    },
+    {
+      name: 'AURORA',
+      announce: 'NORTHERN LIGHTS APPEAR!',
+      duration: 400,
+      init() { return { phase: 0 }; },
+      update(w, f) { w.phase = f * 0.02; },
+      draw(ctx2d, w) {
+        ctx2d.globalAlpha = 0.12 + Math.sin(w.phase) * 0.04;
+        const colors = ['#40ff80', '#8040ff', '#40c0ff', '#ff40c0'];
+        for (let i = 0; i < 4; i++) {
+          ctx2d.fillStyle = colors[i];
+          const y = 10 + i * 12 + Math.sin(w.phase + i * 1.5) * 8;
+          ctx2d.fillRect(0, y|0, GW, 4);
+        }
+        ctx2d.globalAlpha = 1;
+      }
+    },
+    {
+      name: 'SNOW',
+      announce: 'IT\'S SNOWING IN THE BATHROOM!',
+      duration: 300,
+      init(rng) { return { flakes: Array.from({length: 35}, () => ({x: rng()*GW, y: rng()*FLOOR_Y, speed: 0.3 + rng()*0.6, wobble: rng() * Math.PI * 2, size: 1 + Math.floor(rng()*2)})) }; },
+      update(w, f) {
+        for (const s of w.flakes) {
+          s.y += s.speed;
+          s.x += Math.sin(f * 0.02 + s.wobble) * 0.3;
+          if (s.y > FLOOR_Y) { s.y = -3; s.x = Math.random() * GW; }
+        }
+      },
+      draw(ctx2d, w) {
+        ctx2d.fillStyle = '#fff';
+        for (const s of w.flakes) ctx2d.fillRect(s.x|0, s.y|0, s.size, s.size);
+      }
+    },
+    {
+      name: 'POWER OUTAGE',
+      announce: 'POWER OUTAGE!',
+      duration: 180,
+      init() { return { flicker: 0 }; },
+      update(w, f) { w.flicker = f % 20 < 3 ? 0.15 : 0; },
+      draw(ctx2d, w) {
+        ctx2d.fillStyle = `rgba(0,0,0,${0.55 + w.flicker})`;
+        ctx2d.fillRect(0, 0, GW, GH);
+        if (w.flicker > 0) {
+          ctx2d.fillStyle = 'rgba(255,255,200,0.15)';
+          ctx2d.fillRect(GW/2 - 20, 0, 40, GH);
+        }
+      }
+    }
   ];
 
   // ==================== BATTLE GENERATION ====================
@@ -2086,6 +2404,10 @@
       else if (e.type === 'shard') color = '#9df6ff';
       else if (e.type === 'spark') color = '#ff8848';
       else if (e.type === 'moo') color = '#ffcf68';
+      else if (e.type === 'water') color = '#4488ff';
+      else if (e.type === 'soap') color = '#ff88cc';
+      else if (e.type === 'lava') color = '#ff4400';
+      else if (e.type === 'bubble') color = '#88ddff';
       ctx2d.fillStyle = e.color || color;
       if (e.type === 'shard') {
         ctx2d.fillRect(Math.floor(e.x), Math.floor(e.y), e.size + 1, 1);
@@ -2095,6 +2417,16 @@
         ctx2d.fillRect(Math.floor(e.x) - 2, Math.floor(e.y) + 2, 5, 1);
         ctx2d.fillRect(Math.floor(e.x) - 2, Math.floor(e.y) - 1, 1, 4);
         ctx2d.fillRect(Math.floor(e.x) + 2, Math.floor(e.y) - 1, 1, 4);
+      } else if (e.type === 'bubble') {
+        ctx2d.fillRect(Math.floor(e.x) - 1, Math.floor(e.y) - 1, e.size + 2, e.size + 2);
+        ctx2d.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx2d.fillRect(Math.floor(e.x), Math.floor(e.y), 1, 1);
+      } else if (e.type === 'lava') {
+        ctx2d.fillRect(Math.floor(e.x), Math.floor(e.y), e.size, e.size);
+        if (e.size > 1) {
+          ctx2d.fillStyle = '#ffaa00';
+          ctx2d.fillRect(Math.floor(e.x) + 1, Math.floor(e.y) + 1, e.size - 2, e.size - 2);
+        }
       } else {
         ctx2d.fillRect(Math.floor(e.x), Math.floor(e.y), e.size, e.size);
       }
@@ -2219,12 +2551,21 @@
     game.cow.aura = Math.max(0, game.cow.aura - 0.05);
     game.skater.aura = Math.max(0, game.skater.aura - 0.05);
 
+    if (game.weather) {
+      game.weather.update(game.weather, game.frame);
+      if (game.weather.duration > 0) {
+        game.weather.duration -= 1;
+        if (game.weather.duration <= 0) game.weather = null;
+      }
+    }
+
     const bobCow = game.cow.pose === 'idle' ? Math.sin(game.frame * 0.08) * 0.8 : 0;
     const bobSkater = game.skater.pose === 'idle' ? Math.sin(game.frame * 0.08 + 1.1) * 0.8 : 0;
 
     ctx.save();
     ctx.translate(Math.floor(game.shake.x), Math.floor(game.shake.y));
     drawBackground(ctx);
+    if (game.weather) game.weather.draw(ctx, game.weather);
     drawAura(ctx, game.cow.x, FLOOR_Y + game.cow.y, 'rgba(255,123,57,0.6)', game.cow.aura);
     drawAura(ctx, game.skater.x, FLOOR_Y + game.skater.y, 'rgba(17,221,178,0.6)', game.skater.aura);
     drawCow(ctx, game.cow.x, FLOOR_Y + game.cow.y, { pose: game.cow.pose, flash: game.cow.flash, bob: bobCow, spin: game.cow.spin });
@@ -2546,6 +2887,17 @@
         const gagOk = await runComedyInterlude(token, commentaryRng);
         if (!gagOk || token !== battleToken) return;
       }
+      // ~12% chance of weather event (only if no active weather)
+      if (!round.isFinisher && !game.weather && commentaryRng() < 0.12) {
+        const weatherIdx = Math.floor(commentaryRng() * WEATHER_EVENTS.length);
+        const weather = WEATHER_EVENTS[weatherIdx];
+        game.weather = { ...weather, ...weather.init(commentaryRng), duration: weather.duration };
+        setBattleText(weather.announce, 'white');
+        playSound(weatherIdx % 2 === 0 ? 'heavy-hit' : 'bomb');
+        await wait(1200, token);
+        if (token !== battleToken) return;
+        clearBattleText();
+      }
     }
 
     // KO
@@ -2565,12 +2917,64 @@
     winnerBox.classList.add('visible');
     playSound(state.isMisha ? 'win-misha' : 'win-maggie');
 
+    // Victory dance
     const winner = state.isMisha ? game.cow : game.skater;
+    const loser = state.isMisha ? game.skater : game.cow;
     winner.aura = 10;
-    for (let i = 0; i < 3; i++) {
-      await tween(winner, 'y', -7, 110, token);
-      await tween(winner, 'y', 0, 110, token, 'in');
-      if (token !== battleToken) return;
+
+    if (state.isMisha) {
+      // Misha's victory dance: Highland stomp + spin
+      for (let i = 0; i < 4; i++) {
+        winner.pose = 'jump';
+        await tween(winner, 'y', -10, 100, token);
+        addBurst(winner.x, FLOOR_Y, 'dust', 5, 0);
+        playSound('hit');
+        await wait(80, token);
+        await tween(winner, 'y', 0, 100, token, 'in');
+        if (token !== battleToken) return;
+      }
+      winner.pose = 'spin';
+      const spins = 3;
+      const startSpin = winner.spin;
+      await new Promise(resolve => {
+        const t0 = performance.now();
+        function spinFrame(now) {
+          if (token !== battleToken) return resolve(false);
+          const t = Math.min((now - t0) / 500, 1);
+          winner.spin = startSpin + Math.PI * spins * 2 * t;
+          if (t < 1) requestAnimationFrame(spinFrame);
+          else { winner.spin = 0; winner.pose = 'idle'; resolve(true); }
+        }
+        requestAnimationFrame(spinFrame);
+      });
+      addBurst(winner.x, FLOOR_Y - 10, 'spark', 12, 0);
+      playSound('win-misha');
+    } else {
+      // Maggie's victory dance: Triple axel + pose
+      winner.pose = 'jump';
+      await tween(winner, 'y', -20, 200, token);
+      const spins = 4;
+      const startSpin = winner.spin;
+      await new Promise(resolve => {
+        const t0 = performance.now();
+        function spinFrame(now) {
+          if (token !== battleToken) return resolve(false);
+          const t = Math.min((now - t0) / 400, 1);
+          winner.spin = startSpin + Math.PI * spins * 2 * t;
+          if (t < 1) requestAnimationFrame(spinFrame);
+          else { winner.spin = 0; resolve(true); }
+        }
+        requestAnimationFrame(spinFrame);
+      });
+      await tween(winner, 'y', 0, 200, token, 'in');
+      winner.pose = 'idle';
+      addBurst(winner.x, FLOOR_Y, 'ice', 15, 0);
+      // Victory pose: arms up
+      await wait(200, token);
+      winner.pose = 'spin';
+      await wait(400, token);
+      winner.pose = 'idle';
+      playSound('win-maggie');
     }
 
     await wait(1600, token);
